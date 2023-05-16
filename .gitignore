@@ -1,0 +1,13 @@
+**/__pycache__
+*.DS_Store
+*.gitattributes
+**/.idea
+**/.ipynb_checkpoints
+**.zip
+**/DockerTest
+
+_site
+.sass-cache
+.jekyll-cache
+.jekyll-metadata
+vendor
