@@ -1,22 +1,36 @@
+"""
+Prior module for the GRANADE project.
+
+Objective:
+    - Create prior data used for the Planner.
+"""
+
+from WGS import WGS
 
 import os
 import netCDF4
 import numpy as np
 import time
 from pathlib import Path
-from datetime import datetime
-from datetime import date
 from scipy import interpolate
+from datetime import datetime
 
 
 
-from WGS import WGS
-
-class field_SINMOD:
+class Prior: 
 
     def __init__(self, sinmod_path_str) -> None:
 
         # Reading the sinmod file
+        # folderpath = os.getcwd() + "/../sinmod/"
+        # files = os.listdir(folderpath)
+        # sinmod_path_str = ""
+        # for file in files:
+        #     if file.endswith(".nc"):
+        #         sinmod_path_str = folderpath + files[0]
+        # if sinmod_path_str == "":
+        #     raise Exception("No sinmod file found")
+
         self.sinmod_path = sinmod_path_str
         self.sinmod_data = netCDF4.Dataset(sinmod_path_str)
        
@@ -32,19 +46,15 @@ class field_SINMOD:
         self.__load_sinmod_data()
 
         t1 = time.time()  #REMOVE
-        self.interpolation_functions = self.make_interpolation_functions()
+        self.interpolation_functions = self.__make_interpolation_functions()
         t2 = time.time()  #REMOVE
         print(f"== Create interpolate functions == t={t2-t1:,.2f} s")  #REMOVE
-    
-
-    def set_sinmod_path(self, path_string: str) -> None:
-        self.sinmod_path = path_string
 
 
     def __load_sinmod_data(self) -> None:
         t1 = time.time()
         
-        # Loading the data into the dict
+        # Getting the times 
         self.sinmod_data_dict["timestamp"] = self.sinmod_data['time']
         self.sinmod_data_dict["time_stamps"] = np.array(self.sinmod_data_dict["timestamp"])
 
@@ -58,60 +68,69 @@ class field_SINMOD:
         y,x = WGS.latlon2xy(self.sinmod_data_dict["lats"], self.sinmod_data_dict["lons"])
         self.sinmod_data_dict["x"] = x
         self.sinmod_data_dict["y"] = y
-     
         self.sinmod_data_dict["points_xy"] = np.array([x,y])
 
-        self.sinmod_data_dict["dept"] = np.array(self.sinmod_data['depth'])
-        self.sinmod_data_dict["elevation"] = np.array(self.sinmod_data['elevation'])
+        self.sinmod_data_dict["dept"] = np.array(self.sinmod_data['depth'])   # Needed?
+        #self.sinmod_data_dict["elevation"] = np.array(self.sinmod_data['elevation']) # Needed?
 
-        self.sinmod_data_dict["u"] = np.array(self.sinmod_data['u_east'])
-        self.sinmod_data_dict["v"] = np.array(self.sinmod_data['v_north'])
+        #self.sinmod_data_dict["u"] = np.array(self.sinmod_data['u_east']) # Needed?
+        #self.sinmod_data_dict["v"] = np.array(self.sinmod_data['v_north']) # Needed?
 
-        self.sinmod_data_dict["us"] = self.sinmod_data_dict["u"].reshape(-1,1)
-        self.sinmod_data_dict["vs"] = self.sinmod_data_dict["v"].reshape(-1,1)
+        #self.sinmod_data_dict["us"] = self.sinmod_data_dict["u"].reshape(-1,1) # Needed?
+        #self.sinmod_data_dict["vs"] = self.sinmod_data_dict["v"].reshape(-1,1) # Needed?
 
-        self.sinmod_data_dict["we"] = np.array(self.sinmod_data['w_east'])
-        self.sinmod_data_dict["wn"] = np.array(self.sinmod_data['w_north'])
-        self.sinmod_data_dict["velocity"] = np.array(self.sinmod_data['w_velocity'])
+        #self.sinmod_data_dict["we"] = np.array(self.sinmod_data['w_east']) # Needed?
+        #self.sinmod_data_dict["wn"] = np.array(self.sinmod_data['w_north']) # Needed?
+        #self.sinmod_data_dict["velocity"] = np.array(self.sinmod_data['w_velocity']) # Needed?
+
+        # loading salinity 
         self.sinmod_data_dict["salinity"] = np.array(self.sinmod_data['salinity'])
-        self.sinmod_data_dict["temperature"] = np.array(self.sinmod_data["temperature"])
+        #self.sinmod_data_dict["temperature"] = np.array(self.sinmod_data["temperature"])
 
-           
-        #self.n_depts = 
+        # 
         self.n_timesteps = len(self.sinmod_data_dict["timestamp"])
         self.start_date = self.sinmod_data_dict["timestamp"].units.split(" ")[2]
 
-        # Turning the time into seconds 
+        # Turning the time into seconds since 1970
         this_date = self.sinmod_data_dict["timestamp"].units.split(" ")[2]
         time_day_start = self.sinmod_data_dict["timestamp"].units.split(" ")[3]
 
         datetime_str = this_date + " " + time_day_start
         datetime_seconds = datetime.fromisoformat(datetime_str)
-        self.start_second = datetime_seconds
+        self.start_time_s = datetime_seconds
         self.sinmod_data_dict["time_stamp_s"] = datetime_seconds.timestamp() + self.sinmod_data_dict["time_stamps"]  * 24 * 60 * 60
         
+
+        # Printing loading done
         t2 = time.time()
         print(f"== Loading SINMOD data done == t={t2-t1:,.2f} s")
 
-    def make_interpolation_functions(self):
+    def __make_interpolation_functions(self):
+        """
+        This creates the interpolation functions used to get values from the field 
+        """
+
         x = self.sinmod_data_dict["x"]
         y = self.sinmod_data_dict["y"]
-        salinity_loc = self.get_salinity_loc(0,0)
+        salinity_loc = self.get_salinity_loc(0,1)
         ind_ocean = np.where((salinity_loc > 0))
-
+        
+        # THese are the points we want to use
         points = np.array([x[ind_ocean],y[ind_ocean]])
         
         interpolate_functions = []
-        for i in range(self.n_timesteps):
-           
-            field = self.get_salinity_loc(i,0)[ind_ocean]
 
+        # Iterate over all timestamps 
+        for i in range(self.n_timesteps):
+            
+            # Field at timestep i and depth 
+            field = self.get_salinity_loc(i,1)[ind_ocean]
+
+            # Here we create the interpolate functions 
             salinity_interpolator = interpolate.CloughTocher2DInterpolator(points.T, field, tol = 0.1)
             interpolate_functions.append(salinity_interpolator)
 
         return interpolate_functions
-
-
 
     def get_salinity(self) -> np.ndarray:
         return self.sinmod_data_dict["salinity"]
@@ -127,10 +146,11 @@ class field_SINMOD:
 
     def get_salinity_loc(self, time_ind: int, depth_ind: int) -> np.ndarray:
         return self.sinmod_data_dict["salinity"][time_ind, depth_ind, :, :].reshape(-1,1)
+    
 
 
-    def get_salinity_dept_t(self, depth: int, t: float) -> np.ndarray:
-        # Returns the salinity field at a specific time
+    def get_salinity_loc_depth_t(self, depth: int, t: float) -> np.ndarray:
+        # Returns the salinity field at a specific time "t"
         # This is done by linear interpolation
 
         time_stamps = self.sinmod_data_dict["time_stamps"]
@@ -154,41 +174,7 @@ class field_SINMOD:
         
         return sal_time_interp
 
-    def get_salinity_S_t(self, S: np.ndarray, t: float) -> np.ndarray:
-        salinity_loc = self.get_salinity_dept_t(1, t).reshape(-1,1)
-        points_xy = self.sinmod_data_dict["points_xy"]
-        
-        points_xy = points_xy[:,:,0]
-        salinity_loc = salinity_loc[:,0]
-
-        ind = np.where((salinity_loc > 0))
-        
-      
-        salinity_interpolator = interpolate.CloughTocher2DInterpolator(points_xy.T[ind], salinity_loc[ind], tol = 0.1)
-        return salinity_interpolator(S)
-
-
-
-    def get_salinity_s_t(self, s: np.ndarray, t: float) -> np.ndarray:
-        salinity_loc = self.get_salinity_dept_t(1, t).reshape(-1,1)
-        points_xy = self.sinmod_data_dict["points_xy"]
-        
-        points_xy = points_xy[:,:,0]
-        salinity_loc = salinity_loc[:,0]
-
-        x = points_xy[:,0]
-        y = points_xy[:,1]
-
-        ind = np.where((((s[0]-x)**2 + (s[1]-y)**2)**(1/2) < 1000))
-
-        ind = np.where((salinity_loc > 0) * (np.linalg.norm(points_xy.T - s) < 1000))
-        
-      
-        salinity_interpolator = interpolate.CloughTocher2DInterpolator(points_xy.T[ind], salinity_loc[ind], tol = 0.1)
-        return salinity_interpolator(S)
-
-
-    def get_time_ind_below_above(self, T: np.ndarray):
+    def get_time_ind_below_above_T(self, T: np.ndarray) -> tuple:
         # T should be in seconds since 1970
         # OPTIMISE
         n = len(T)
@@ -201,7 +187,6 @@ class field_SINMOD:
             # Getting k
             k = 0
             for i in range(len(time_stamps_s) - 1):
-
                 if t >= time_stamps_s[i] and t < time_stamps_s[i+1]:
                     k = i
             ind_below.append(k)
@@ -209,13 +194,13 @@ class field_SINMOD:
         
         return ind_below, ind_above
 
-
     def get_time_ind_below_above_t(self, t: np.ndarray):
         # T should be in seconds since 1970
         # OPTIMISE
         ind_below = 0
         ind_above = 1
 
+        # TODO: case where T is not inside start and end timesamp_s
         # This is the sinmod timestamps in unix units
         time_stamps_s = self.sinmod_data_dict["time_stamp_s"]
         # Getting k
@@ -229,14 +214,11 @@ class field_SINMOD:
         
         return ind_below, ind_above
 
-
-
-
     def get_salinity_S_T(self, S: np.ndarray, T: np.ndarray) -> np.ndarray:
         # S points in the 2d plane
         # T time stamps 
 
-        ind_below, ind_above = self.get_time_ind_below_above(T)
+        ind_below, ind_above = self.get_time_ind_below_above_T(T)
 
         time_stamps_s = self.sinmod_data_dict["time_stamp_s"]
 
@@ -249,12 +231,11 @@ class field_SINMOD:
         for i in range(self.n_timesteps - 1):
             ind = np.where((ind_below == i))
             if len(ind[0]) > 0:
+                # s is a list of points
                 s = S[ind]
 
                 t_b = time_stamps_s[i]
                 t_a = time_stamps_s[i+1]
-
-
 
                 salinity_points_b = self.interpolation_functions[i](s)
                 salinity_points_a = self.interpolation_functions[i+1](s)
@@ -267,7 +248,6 @@ class field_SINMOD:
                     k += 1
 
         return salinity_point
-
 
     def get_gradient_field(self, time_step, depth, delta = 0.0001):
 
@@ -294,84 +274,4 @@ class field_SINMOD:
         
         return points, G_vec
 
-
-
-
-if __name__=="__main__":
-    import matplotlib.pyplot as plt
-    import time
-
     
-    cwd = os.getcwd() 
-    data_path = cwd + "/data_SINMOD/"
-
-    
-    dir_list = os.listdir(data_path)
-    sinmod_files = []
-    for file in dir_list:
-        if file.split(".")[-1] == "nc":
-            sinmod_files.append(file)
-
-    print(sinmod_files)
-
-    file_num = 0
-    sinmod_field = field_SINMOD(data_path + sinmod_files[file_num])
-
-
-    sampling_frequency = 0.1 # s^-1
-    auv_speed = 1.6 # m/2
-    t_0 = sinmod_field.sinmod_data_dict["time_stamp_s"][70] # start time 
-    a = np.array([0,2000]) # start point
-    b = np.array([1000,3000]) # end point
-
-    def get_points(a,b,t_0):
-    
-        dist = np.linalg.norm(b - a)
-        total_time = dist / auv_speed
-        n_points = int(total_time * sampling_frequency)
-        t_end = t_0 + total_time
-        
-        T = np.linspace(t_0, t_end, n_points)
-        S = np.linspace(a, b, n_points)
-        
-        return S, T
-
-    S, T = get_points(a,b,t_0)
-
-    t1 = time.time()
-    sal_alt = sinmod_field.get_salinity_S_T(S,T)
-    t2 = time.time()
-    print(len(T), t2-t1)
-
-    t1 = time.time()
-    sal_alt = sinmod_field.get_salinity_S_T(S,T)
-    t2 = time.time()
-    print(len(T), t2-t1)
-
-
-    #plt.plot(sal, c = "Red")
-    plt.plot(sal_alt , c="Green")
-    plt.show()
-
-    
-
-    salinity_loc = sinmod_field.get_salinity_loc(70,0)
-    ind_ocean = np.where((salinity_loc > 0))
-    print(np.nanmax(salinity_loc))
-    x,y = sinmod_field.get_xy()
-
-    plt.scatter(x[ind_ocean],y[ind_ocean],c=salinity_loc[ind_ocean], vmin=0, vmax=35)
-    plt.scatter(S[:,0], S[:,1], c=sal_alt,cmap="Reds", vmin=0, vmax=35)
-    plt.show()
-
-
-    points, G_vec = sinmod_field.get_gradient_field(1,0)
-    G_abs = np.linalg.norm(G_vec,axis=1)
-    plt.scatter(points[:,0],points[:,1], c=G_abs, vmin=0, vmax=0.05, cmap="Reds")
-    plt.show()
-
-
-
-
-
-
