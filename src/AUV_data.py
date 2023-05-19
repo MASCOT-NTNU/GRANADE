@@ -16,8 +16,10 @@ class AUVData:
 
     def __init__(self,
                     prior_function, 
+                    temporal_corrolation: bool = False,
                     tau: float = 0.4,
                     phi_d: float = 200,
+                    phi_t: float = 10,
                     sigma: float = 2,
                     sampling_speed: float = 1,
                     auv_speed: float = 1.6,
@@ -26,6 +28,7 @@ class AUVData:
         # Parameters for the spatial corrolation 
         self.tau = tau # Measurment noits
         self.phi_d = phi_d
+        self.phi_t = phi_t
         self.sigma = sigma
         self.max_points = 2000
 
@@ -37,44 +40,96 @@ class AUVData:
         # ? should this be here 
         self.prior_function = prior_function
 
+        # AUV data
         self.auv_data = {"has_points": False}
+        self.all_auv_data = {"has_points": False}
 
         self.timing = timing
         self.auv_data_timing = {}
+        self.max_time_pr_loop = 20 # seconds
+
+        # If we want to use temporal corrolation
+        self.temporal_corrolation = temporal_corrolation
+
+    
+    def get_sigma(self) ->  float:
+        return self.sigma
+    
+    def set_sigma(self, sigma):
+        self.sigma = sigma
+
+    def get_phi_d(self) ->  float:
+        return self.phi_d
+    
+    def set_phi_d(self, phi_d):
+        self.phi_d = phi_d
+
+    def get_tau(self) ->  float:
+        return self.tau
+    
+    def set_tau(self, tau):
+        self.tau = tau
+
+    def get_auv_speed(self) ->  float:
+        return self.auv_speed
+    
+    def set_auv_speed(self, auv_speed):
+        self.auv_speed = auv_speed
+
+    def get_sampling_speed(self) ->  float:
+        return self.sampling_speed
+    
+    def set_sampling_speed(self, sampling_speed):
+        self.sampling_speed = sampling_speed
+
+    def get_max_points(self) ->  float:
+        return self.max_points
+    
+    def set_max_points(self, max_points):
+        self.max_points = max_points
 
 
-
-    def corr_d(self, d):
+    def cov_distance(self, d) -> np.ndarray:    
         # Returns the spatial corroalation for a distance d 
         return self.sigma**2 * np.exp(-(d / self.phi_d)**2)
 
 
     # TODO: add a temporal corrolation function
+    def cov_temporal(self, t) -> np.ndarray:
+        # Returns the temporal corroalation for a time t 
+        return np.exp(-(t / self.phi_t)**2)
 
 
-    def make_covariance_matrix(self, S: np.ndarray) -> np.ndarray:
-        D = distance_matrix(S,S)
-        return self.corr_d(D)
+    def make_covariance_matrix(self, S: np.ndarray, T = np.empty((1))) -> np.ndarray:
+        D_matrix = distance_matrix(S,S)
+        if self.temporal_corrolation:
+            T_matrix = distance_matrix(T.reshape(-1,1),T.reshape(-1,1))
+            print(T_matrix.shape, D_matrix.shape)
+            return self.cov_distance(D_matrix) * self.cov_temporal(T_matrix)
+        return self.cov_distance(D_matrix) 
+
+
+    def make_covariance_matrix_2(self, S_1: np.ndarray, S_2: np.ndarray, T_1 = np.empty(1), T_2 = np.empty(1)) -> np.ndarray:
+        D_matrix = distance_matrix(S_1,S_2)
+        if self.temporal_corrolation:
+            T_matrix = distance_matrix(T_1.reshape(-1,1),T_2.reshape(-1,1))
+            print(T_matrix.shape, D_matrix.shape)
+            return self.cov_distance(D_matrix) * self.cov_temporal(T_matrix)
+        return self.cov_distance(D_matrix)
 
 
 
-    def make_covariance_matrix_2(self, S_1: np.ndarray, S_2: np.ndarray) -> np.ndarray:
-        D = distance_matrix(S_1,S_2)
-        return self.corr_d(D)
-
-
-
-    def update_covariance_matrix(self, old_cov_matrix,points_old, points_new) -> np.ndarray:
-        n = len(points_old)
-        m = len(points_new)
+    def update_covariance_matrix(self, old_cov_matrix,S_old, S_new,T_old=np.empty(1), T_new=np.empty(1)) -> np.ndarray:
+        n = len(S_old)
+        m = len(S_new)
         
         new_covariance_matrix = np.zeros((n+m,n+m))
         new_covariance_matrix[0:n,0:n] = old_cov_matrix
         
-        covariance_matrix_ab = self.make_covariance_matrix_2(points_old, points_new)
+        covariance_matrix_ab = self.make_covariance_matrix_2(S_old, S_new, T_old, T_new)    
         covariance_matrix_ba = np.transpose(covariance_matrix_ab)
         
-        covariance_matrix_bb = self.make_covariance_matrix(points_new)
+        covariance_matrix_bb = self.make_covariance_matrix(S_new, T_new)
         
         new_covariance_matrix[n:(n+m),0:n] = covariance_matrix_ba
         new_covariance_matrix[0:n,n:(n+m)] = covariance_matrix_ab
@@ -94,19 +149,12 @@ class AUVData:
         m = D.shape[0]
         inverted_matrix = np.zeros((n+m,n+m))
 
-        #C_inv = np.linalg.inv(C)
         U = B.T @ A_inv
-        V = U.T #A_inv @ B
-        #print(np.sum(U - V.T))
-        #print(np.sum(V))
-
-    
+        V = U.T 
 
         S = np.linalg.inv(D - B.T @ A_inv @ B)
         
         V_at_S = V @ S
-
-        #print(np.sum(V_at_S.T - S @ U))
 
         inverted_matrix[0:n,0:n] = A_inv + V_at_S @ U
         inverted_matrix[n:(n+m),0:n] = - S @ U
@@ -131,9 +179,12 @@ class AUVData:
         self.auv_data["salinity"] = salinity
         self.auv_data["used_points"] = np.repeat(True, len(salinity))
 
+       
+
+
         # get the prior for the new points
         mu = self.prior_function.get_salinity_S_T(S, T)
-        Sigma = self.make_covariance_matrix(S)
+        Sigma = self.make_covariance_matrix(S, T)
 
         # Gets the conditonal mean and variance
         inv_matrix = np.linalg.inv(Sigma + np.eye(len(mu)) * self.tau**2) 
@@ -149,20 +200,30 @@ class AUVData:
         self.auv_data["m"] = m
         self.auv_data["Psi"] = Psi
 
+
+
         # Change notes so we know that we have points
         self.auv_data["has_points"] = True
+
+
+
      
 
 
     def add_new_datapoints(self, S_new,T_new, salinity_new):
 
         start = time.time()
+        n_new = len(salinity_new)
 
         # This function adds the new datapoints and calculates
         # - mu
         # - Sigma
         # - m
         # - Psi
+        # - inv_matrix
+        # - G
+        # - Var_G
+
 
         if self.auv_data["has_points"] == False:
             self.add_first_points(S_new, T_new, salinity_new)
@@ -177,6 +238,7 @@ class AUVData:
             S = self.auv_data["S"]
             Sigma = self.auv_data["Sigma"]
             salinity = self.auv_data["salinity"]
+            T = self.auv_data["T"]
 
             # These points are not jet used 
             used_points_new = np.repeat(True, len(salinity_new))
@@ -186,13 +248,13 @@ class AUVData:
             mu_new = self.prior_function.get_salinity_S_T(S_new, T_new)
             
             # Update the covariance matrix, this saves some time
-            n, m = len(salinity), len(salinity_new)
-            T_1, T_2 = np.eye(n) * self.tau**2, np.eye(m) * self.tau**2
+            n_old, n_new = len(salinity), len(salinity_new)
+       
             Sigma_11 = Sigma
-            Sigma = self.update_covariance_matrix(Sigma, S, S_new)
+            Sigma = self.update_covariance_matrix(Sigma, S, S_new,T, T_new) 
 
-            Sigma_12 = Sigma[0:n, n:(n+m)]
-            Sigma_22 = Sigma[n:(n+m),n:(n+m)]
+            Sigma_12 = Sigma[0:n_old, n_old:(n_old+n_new)]
+            Sigma_22 = Sigma[n_old:(n_old+n_new),n_old:(n_old+n_new)]
             
             # Joining datapoints
             mu = np.concatenate((mu,mu_new))
@@ -205,7 +267,8 @@ class AUVData:
 
             # TODO: clean up this 
             # Gets the conditonal mean and variance
-            Sigma_11_inv = self.auv_data["inv_matrix_alt"]
+            Sigma_11_inv = self.auv_data["inv_matrix"]
+            T_1, T_2 = np.eye(n_old) * self.tau**2, np.eye(n_new) * self.tau**2
             inv_matrix = self.inverse_matrix_block_symetric(Sigma_11 + T_1, Sigma_12, Sigma_22 + T_2, Sigma_11_inv)
             inv_matrix_alt = inv_matrix
             #inv_matrix = np.linalg.inv(Sigma + np.eye(n+m) * self.tau**2) 
@@ -227,6 +290,10 @@ class AUVData:
         # Based on this we estimate the gradient
         self.auv_data["G"], self.auv_data["Var_G"] = self.get_gradient(self.auv_data["m"], self.auv_data["S"], self.auv_data["Psi"])
 
+        # Update all data
+        self.update_all_data(n_new)
+
+
         end = time.time()
         # Store timing
         if self.timing: 
@@ -241,6 +308,80 @@ class AUVData:
                 self.auv_data_timing[func_name]["counter"] = 1 
                 self.auv_data_timing[func_name]["total_time"] = end - start
                 self.auv_data_timing[func_name]["time_list"] = [end - start]
+
+
+    def update_all_data(self, n_new: int):
+
+        if self.all_auv_data["has_points"] == False:
+            # Add the data to the all_auv_data
+
+            # Vectors 
+            self.all_auv_data["S"] = self.auv_data["S"]
+            self.all_auv_data["T"] = self.auv_data["T"]
+            self.all_auv_data["salinity"] = self.auv_data["salinity"]
+            self.all_auv_data["mu"] = self.auv_data["mu"]
+            self.all_auv_data["m"] = self.auv_data["m"] 
+            self.all_auv_data["G"] = self.auv_data["G"]
+            self.all_auv_data["Var_G"] = self.auv_data["Var_G"]
+
+            # Diagonal of the matrices
+            self.all_auv_data["dPsi"] = np.diag(self.auv_data["Psi"])
+            self.all_auv_data["dSigma"] = np.diag(self.auv_data["Sigma"])
+
+
+            self.all_auv_data["has_points"] = True
+        
+        else:
+             # Add the data to the all_auv_data
+
+            # Vectors 
+            self.all_auv_data["S"] = np.concatenate((self.all_auv_data["S"], self.auv_data["S"][-n_new:]))
+            self.all_auv_data["T"] = np.concatenate((self.all_auv_data["T"], self.auv_data["T"][-n_new:]))
+            self.all_auv_data["salinity"] = np.concatenate((self.all_auv_data["salinity"], self.auv_data["salinity"][-n_new:]))
+            self.all_auv_data["mu"] = np.concatenate((self.all_auv_data["mu"], self.auv_data["mu"][-n_new:]))
+            self.all_auv_data["m"] = np.concatenate((self.all_auv_data["m"], self.auv_data["m"][-n_new:]))
+            self.all_auv_data["G"] = np.concatenate((self.all_auv_data["G"], self.auv_data["G"][-n_new:]))
+            self.all_auv_data["Var_G"] = np.concatenate((self.all_auv_data["Var_G"], self.auv_data["Var_G"][-n_new:]))
+
+            # Diagonal of the matrices
+            self.all_auv_data["dPsi"] = np.concatenate((self.all_auv_data["dPsi"], np.diag(self.auv_data["Psi"])[-n_new:]))
+            self.all_auv_data["dSigma"] = np.concatenate((self.all_auv_data["dSigma"], np.diag(self.auv_data["Sigma"])[-n_new:]))
+
+
+
+
+
+    def down_sample_points(self):
+        # This function removes half of the points in the data
+        # This is done to save time
+        old_data = self.auv_data
+        new_data = {}
+
+        ind = [True if i % 2 == 0 else False for i in range(len(old_data["S"]))]
+        new_data["S"] = old_data["S"][ind]
+        new_data["T"] = old_data["T"][ind]
+        new_data["salinity"] = old_data["salinity"][ind]
+        new_data["Sigma"] = old_data["Sigma"][ind][:,ind]
+        new_data["mu"] = old_data["mu"][ind]
+        new_data["m"] = old_data["m"][ind]
+        new_data["Psi"] = old_data["Psi"][ind][:,ind]
+        new_data["G"] = old_data["G"][ind[0:-1]]
+        new_data["Var_G"] = old_data["Var_G"][ind[0:-1]]
+        new_data["inv_matrix"] =  np.linalg.inv(new_data["Sigma"] + np.eye(len(new_data["mu"])) * self.tau**2)
+
+        # Adding the unchanged data
+        new_data["has_points"] = old_data["has_points"]
+        new_data["used_points"] = old_data["used_points"]
+        new_data["path_list"] = old_data["path_list"]
+        
+        # Store the down sampled data
+        self.auv_data = new_data
+
+
+
+
+        
+
 
         
 
@@ -270,14 +411,13 @@ class AUVData:
             n = len(S)
             m = len(P_predict)
             
+
             cov_sy = Sigma_SP[0:n, n:(n+m)]
             cov_yy = Sigma_S
             cov_ss = Sigma_SP[n:(n+m),n:(n+m)]
             
             
-            nois_matrix = np.eye(n) * self.tau**2
-            
-            M = np.transpose(cov_sy) @ np.linalg.inv(Sigma_S + nois_matrix)
+            M = np.transpose(cov_sy) @ self.auv_data["inv_matrix"]
             
             # the prior
             mu_S = self.auv_data["mu"]
@@ -390,7 +530,7 @@ class AUVData:
         # Iterate over all the directions
         # The directions is a list of angles
         #inv_matrix = self.auv_data["inv_matrix"]
-        inv_matrix = self.auv_data["inv_matrix_alt"]
+        inv_matrix = self.auv_data["inv_matrix"]
         
         for j in range(len(endpoints)):
                 
@@ -548,7 +688,7 @@ if __name__=="__main__":
 
     # Load the sinmod field 
     cwd = os.getcwd() 
-    data_path = cwd + "/data_SINMOD/"
+    data_path = cwd + "/src/sinmod_files/"
 
 
     dir_list = os.listdir(data_path)
@@ -562,7 +702,7 @@ if __name__=="__main__":
     file_num = 0
     sinmod_field = field_SINMOD(data_path + sinmod_files[file_num])
     operation_field = FieldOperation()
-    AUV_data = AUVData(sinmod_field)
+    AUV_data = AUVData(sinmod_field,temporal_corrolation=True)
 
 
     def get_points(a,b,t_0):
@@ -656,11 +796,19 @@ if __name__=="__main__":
     print(np.sum(T - T_true))
 
     m_predic, psi_predict, G_predict, Var_G = AUV_data.predict_points(S_true, T_true)
- 
+    m_interpolate = AUV_data.auv_data["m"]
+    Psi_interpolate = AUV_data.auv_data["Psi"]
+    T_interpolate = AUV_data.auv_data["T"]
+
 
     n = np.arange(len(salinity))
-    plt.plot(n,m_predic , c="Green", label="predicted")
-    plt.plot(n,salinity_true, label="True value")
+    plt.plot(T_true,m_predic , c="Green", label="predicted")
+    plt.plot(T_true,m_predic + np.sqrt(np.diag(psi_predict)) * 1.645, c="Green", linestyle="--")
+    plt.plot(T_true,m_predic - np.sqrt(np.diag(psi_predict)) * 1.645, c="Green", linestyle="--")
+    plt.plot(T_true,salinity_true, c="blue", label="True value")
+    plt.plot(T_interpolate, m_interpolate,c="green", label="interpolate")
+    plt.plot(T_interpolate, m_interpolate + np.sqrt(np.diag(Psi_interpolate)) * 1.645,c="green" , linestyle="--")
+    plt.plot(T_interpolate, m_interpolate - np.sqrt(np.diag(Psi_interpolate)) * 1.645,c="green", linestyle="--")
     plt.legend()
     plt.show()
 
@@ -673,3 +821,6 @@ if __name__=="__main__":
     AUV_data.print_timing()
     AUV_data.plot_timing()
 
+
+
+    AUV_data.down_sample_points()

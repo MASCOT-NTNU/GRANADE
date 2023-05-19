@@ -121,6 +121,15 @@ class field_SINMOD:
 
     def get_xy(self) -> np.ndarray:
         return  self.sinmod_data_dict["x"], self.sinmod_data_dict["y"]
+    
+    def get_points_ocean(self) -> np.ndarray:
+        x = self.sinmod_data_dict["x"]
+        y = self.sinmod_data_dict["y"]
+        salinity_loc = self.get_salinity_loc(0,0)
+        ind_ocean = np.where((salinity_loc > 0))
+        points = np.array([x[ind_ocean],y[ind_ocean]]).T
+        return points
+
 
     def get_time_steps_seconds(self) -> np.ndarray:
         return self.sinmod_data_dict["time_stamp_s"]
@@ -303,7 +312,7 @@ if __name__=="__main__":
 
     
     cwd = os.getcwd() 
-    data_path = cwd + "/data_SINMOD/"
+    data_path = cwd + "/src/sinmod_files/"
 
     
     dir_list = os.listdir(data_path)

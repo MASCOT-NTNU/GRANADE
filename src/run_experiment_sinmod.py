@@ -26,7 +26,7 @@ from DescicionRule import DescicionRule
 
 def get_points(a,b,t_0):
 
-    dist = np.linalg.norm(b - a)
+    dist = np.linalg.norm(b - a) 
     total_time = dist / AUV_SPEED
     n_points = int(total_time * SAMPLE_FREQ)
     t_end = t_0 + total_time
@@ -86,7 +86,7 @@ n_directions = 8
 max_points = 10000
 horizion =  500
 r = 250
-n_iterations = 50
+n_iterations = 200
 init_r = 70
 file_num = 6
 
@@ -94,7 +94,7 @@ file_num = 6
 
 # Load the sinmod field 
 cwd = os.getcwd() 
-data_path = cwd + "/data_SINMOD/"
+data_path = cwd + "/src/sinmod_files/"
 
 
 dir_list = os.listdir(data_path)
@@ -220,6 +220,9 @@ for i in range(n_iterations):
     iter_speed.append(time.time() - t_1)
     iter_n_points.append(len(AUV_data.auv_data["S"]))
 
+    if iter_speed[-1] > 5:
+        AUV_data.down_sample_points()
+        
 print(iter_speed)
 
 AUV_data.print_auv_data_shape()
@@ -227,8 +230,8 @@ AUV_data.print_auv_data_shape()
 plt.show()
 
 
-S = AUV_data.auv_data["S"]
-salinity = AUV_data.auv_data["salinity"]
+S = AUV_data.all_auv_data["S"]
+salinity = AUV_data.all_auv_data["salinity"]
 salinity_loc = sinmod_field.get_salinity_loc(0,0)
 ind_ocean = np.where((salinity_loc > 0))
 x,y = sinmod_field.get_xy()
@@ -237,18 +240,18 @@ print(salinity)
 plt.scatter(x[ind_ocean],y[ind_ocean],c=salinity_loc[ind_ocean], vmin=0, vmax=30, alpha=0.05)
 plt.scatter(S[:,0], S[:,1], c=salinity, vmin=0, vmax=30)
 operation_field.plot_operational_area()
-plt.show()
+plt.show(block=False)
     
 
 plt.scatter(x[ind_ocean],y[ind_ocean],c=salinity_loc[ind_ocean], vmin=0, vmax=30, alpha=0.05)
-plt.scatter(S[:,0], S[:,1], c=AUV_data.auv_data["T"])
+plt.scatter(S[:,0], S[:,1], c=AUV_data.all_auv_data["T"])
 operation_field.plot_operational_area()
 plt.show()
 
 AUV_data.print_timing()
 AUV_data.plot_timing()
 
-t_ind, _ = sinmod_field.get_time_ind_below_above(AUV_data.auv_data["T"])
+t_ind, _ = sinmod_field.get_time_ind_below_above(AUV_data.all_auv_data["T"])
 t_ind_np = np.array(t_ind)
 m = 0
 
@@ -262,13 +265,31 @@ for i in range(k):
         points, G_vec = sinmod_field.get_gradient_field(i,0)
         G_abs = np.linalg.norm(G_vec,axis=1)
         plt.scatter(points[:,0],points[:,1], c=G_abs, vmin=0, vmax=0.05, cmap="Reds")
-        plt.scatter(S[:,0][curr_ind], S[:,1][curr_ind], c=AUV_data.auv_data["m"][curr_ind])
+        plt.scatter(S[:,0][curr_ind], S[:,1][curr_ind], c=AUV_data.all_auv_data["m"][curr_ind])
         operation_field.plot_operational_area(False)
         plt.legend()
 
         plt.savefig("src/plots/gradient_path"+ str(i) + '.png', dpi=150)
-        plt.show()
+        plt.close()
 
+
+predict_points = sinmod_field.get_points_ocean()
+print(predict_points.shape)
+
+# sample n values from a numpy array
+inds = np.random.choice(np.arange(len(predict_points)), size=4000, replace=False)
+predict_points = predict_points[inds]
+
+T = np.repeat(AUV_data.auv_data["T"][-1], len(predict_points))
+mu_pred, sigma_pred , _, _ = AUV_data.predict_points(predict_points, T)
+
+plt.scatter(predict_points[:,0],predict_points[:,1], c=mu_pred, vmin=0, vmax=30)
+plt.colorbar()
+plt.show()
+
+plt.scatter(predict_points[:,0],predict_points[:,1], c=np.diag(sigma_pred), vmin=0, vmax=4)
+plt.colorbar()
+plt.show()
 
 
 
