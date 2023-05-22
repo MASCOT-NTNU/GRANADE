@@ -19,7 +19,7 @@ class AUVData:
                     temporal_corrolation: bool = False,
                     tau: float = 0.4,
                     phi_d: float = 200,
-                    phi_t: float = 10,
+                    phi_t: float = 7200,
                     sigma: float = 2,
                     sampling_speed: float = 1,
                     auv_speed: float = 1.6,
@@ -89,6 +89,23 @@ class AUVData:
         self.max_points = max_points
 
 
+    def get_auv_all_salinity(self) -> np.ndarray:
+        return self.all_auv_data["salinity"]  
+    
+    def get_all_points(self) -> np.ndarray:
+        return self.all_auv_data["S"]
+    
+    def get_last_point(self) -> np.ndarray:
+        return self.auv_data["S"][-1]
+    
+    
+    def get_auv_data(self) -> dict:
+        return self.auv_data
+    
+    def get_auv_path_list(self) -> np.ndarray:
+        return self.auv_data["path_list"]    
+
+
     def cov_distance(self, d) -> np.ndarray:    
         # Returns the spatial corroalation for a distance d 
         return self.sigma**2 * np.exp(-(d / self.phi_d)**2)
@@ -98,13 +115,16 @@ class AUVData:
     def cov_temporal(self, t) -> np.ndarray:
         # Returns the temporal corroalation for a time t 
         return np.exp(-(t / self.phi_t)**2)
+    
+    @staticmethod
+    def distance_matrix_one_dimension(vec_1, vec_2) -> np.ndarray:
+        return distance_matrix(vec_1.reshape(-1,1), vec_2.reshape(-1,1))
 
 
     def make_covariance_matrix(self, S: np.ndarray, T = np.empty((1))) -> np.ndarray:
         D_matrix = distance_matrix(S,S)
         if self.temporal_corrolation:
-            T_matrix = distance_matrix(T.reshape(-1,1),T.reshape(-1,1))
-            print(T_matrix.shape, D_matrix.shape)
+            T_matrix = self.distance_matrix_one_dimension(T,T)
             return self.cov_distance(D_matrix) * self.cov_temporal(T_matrix)
         return self.cov_distance(D_matrix) 
 
@@ -112,11 +132,9 @@ class AUVData:
     def make_covariance_matrix_2(self, S_1: np.ndarray, S_2: np.ndarray, T_1 = np.empty(1), T_2 = np.empty(1)) -> np.ndarray:
         D_matrix = distance_matrix(S_1,S_2)
         if self.temporal_corrolation:
-            T_matrix = distance_matrix(T_1.reshape(-1,1),T_2.reshape(-1,1))
-            print(T_matrix.shape, D_matrix.shape)
+            T_matrix = self.distance_matrix_one_dimension(T_1,T_2)          
             return self.cov_distance(D_matrix) * self.cov_temporal(T_matrix)
         return self.cov_distance(D_matrix)
-
 
 
     def update_covariance_matrix(self, old_cov_matrix,S_old, S_new,T_old=np.empty(1), T_new=np.empty(1)) -> np.ndarray:
@@ -201,13 +219,8 @@ class AUVData:
         self.auv_data["Psi"] = Psi
 
 
-
         # Change notes so we know that we have points
         self.auv_data["has_points"] = True
-
-
-
-     
 
 
     def add_new_datapoints(self, S_new,T_new, salinity_new):
@@ -395,7 +408,7 @@ class AUVData:
             mu_predict = self.prior_function.get_salinity_S_T(P_predict, T_predict)
 
             # Sigma 
-            Sigma_PP = self.make_covariance_matrix(P_predict)
+            Sigma_PP = self.make_covariance_matrix(P_predict, T_predict)
 
             # Estimate the gradient
             G, Var_G = self.get_gradient(mu_predict, P_predict, Sigma_PP)
@@ -404,9 +417,10 @@ class AUVData:
 
         else:
             S = self.auv_data["S"]
+            T = self.auv_data["T"]
             Sigma_S = self.auv_data["Sigma"]
         
-            Sigma_SP = self.update_covariance_matrix(Sigma_S, S, P_predict)
+            Sigma_SP = self.update_covariance_matrix(Sigma_S, S, P_predict,T, T_predict)
             
             n = len(S)
             m = len(P_predict)
@@ -585,10 +599,11 @@ class AUVData:
         Sigma = self.auv_data["Sigma"]
         salinity_S = self.auv_data["salinity"]
         S = self.auv_data["S"]
+        T = self.auv_data["T"]  
         mu_S = self.auv_data["mu"]
 
         # This is where 70 - 90 % of the time goes
-        cov_matrix_large = self.update_covariance_matrix(Sigma, S, P_predict)
+        cov_matrix_large = self.update_covariance_matrix(Sigma, S, P_predict, T , T_predict)
         
         # The size of the different datasets
         n = len(salinity_S)

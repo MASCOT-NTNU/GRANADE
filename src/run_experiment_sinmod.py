@@ -21,6 +21,7 @@ from WGS import WGS
 from field_operation import FieldOperation
 from AUV_data import AUVData
 from DescicionRule import DescicionRule
+from plotting_functions.plotting import PlotttingFunctions
 
 
 
@@ -86,9 +87,11 @@ n_directions = 8
 max_points = 10000
 horizion =  500
 r = 250
-n_iterations = 200
+n_iterations = 100
 init_r = 70
-file_num = 6
+file_num_prior = 6
+file_num_true_field = 1
+plot_iter = True
 
 
 
@@ -106,9 +109,10 @@ for file in dir_list:
 print(sinmod_files)
 
 
-sinmod_field = field_SINMOD(data_path + sinmod_files[file_num])
+sinmod_field_prior = field_SINMOD(data_path + sinmod_files[file_num_prior])
+sinmod_field = field_SINMOD(data_path + sinmod_files[file_num_true_field])
 operation_field = FieldOperation()
-AUV_data = AUVData(sinmod_field)
+AUV_data = AUVData(sinmod_field_prior, temporal_corrolation=True)
 des_rule = DescicionRule("top_p_improvement")
 
     
@@ -193,11 +197,11 @@ for i in range(n_iterations):
     plt.plot(path_list[:,0],path_list[:,1], c="black")       
 
     operation_field.plot_operational_area(False)
-    plt.savefig("src/plots/path_and_tree"+ str(i) + '.png', dpi=150)
+    plt.savefig("src/plots/path_and_tree/path_and_tree"+ str(i) + '.png', dpi=150)
     plt.close()  
         
 
-    direction_data = AUV_data.predict_directions(end_points) # This is 99% of the running time
+    direction_data = AUV_data.predict_directions(end_points) 
     
     # Here we need the descicion rule
 
@@ -209,19 +213,49 @@ for i in range(n_iterations):
 
     curr_time = AUV_data.auv_data["T"][-1]
 
+    iter_speed.append(time.time() - t_1)
+    
+
+    plotting_time = time.time()
+    if plot_iter:
+        plotter = PlotttingFunctions(AUV_data, operation_field, sinmod_field)
+        fig, ax = plt.subplots(1,2,figsize=(20,10))
+
+        plotter.axs_add_limits(ax[0])
+        plotter.plot_measured_salinity(ax[0])
+        plotter.plot_kriege_variance(ax[0])
+        plotter.add_operational_limits(ax[0])
+        plotter.plot_path(ax[0])
+        plotter.plot_descicion_paths(ax[0], direction_data)
+
+        plotter.axs_add_limits(ax[1])
+        plotter.plot_measured_salinity(ax[1])
+        plotter.plot_kriege_salinity(ax[1])
+        plotter.add_operational_limits(ax[1])
+        plotter.plot_path(ax[1])
+        plotter.plot_descicion_paths(ax[1], direction_data)
+
+        plt.savefig("src/plots/dashboard/dashboard_"+ str(i) + '.png', dpi=150)
+        plt.close()
+    plotting_time = time.time() - plotting_time
+
     # Get data from this field 
-    S, T, salinity = get_data_transact(a,b,curr_time, sinmod_field) 
+    S, T, salinity = get_data_transact(a, b ,curr_time, sinmod_field) 
 
     ## First go in a random direct
     AUV_data.add_new_datapoints(S,T,salinity)
     
     print(i," Time for iteration: ", round(time.time() - t_1, 2))
+
+    if iter_speed[-1] - plotting_time > 5:
+        AUV_data.down_sample_points()
             
-    iter_speed.append(time.time() - t_1)
+    
     iter_n_points.append(len(AUV_data.auv_data["S"]))
 
-    if iter_speed[-1] > 5:
-        AUV_data.down_sample_points()
+
+
+
         
 print(iter_speed)
 
@@ -269,7 +303,7 @@ for i in range(k):
         operation_field.plot_operational_area(False)
         plt.legend()
 
-        plt.savefig("src/plots/gradient_path"+ str(i) + '.png', dpi=150)
+        plt.savefig("src/plots/gradient_path/gradient_path"+ str(i) + '.png', dpi=150)
         plt.close()
 
 
