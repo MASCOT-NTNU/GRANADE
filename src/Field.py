@@ -12,14 +12,15 @@ import numpy as np
 from math import cos, sin, radians
 import pandas as pd
 import os
+import matplotlib.pyplot as plt
 
 
 class Field:
 
     def __init__(self) -> None:
         # s1, load csv files for all the polygons
-        self.__wgs_polygon_border = pd.read_csv(os.getcwd() + "/csv/polygon_border.csv").to_numpy()
-        self.__wgs_polygon_obstacle = pd.read_csv(os.getcwd() + "/csv/polygon_obstacle.csv").to_numpy()
+        self.__wgs_polygon_border = pd.read_csv(os.getcwd() + "/src/csv/polygon_border.csv").to_numpy()
+        self.__wgs_polygon_obstacle = pd.read_csv(os.getcwd() + "/src/csv/polygon_obstacle.csv").to_numpy()
 
         # s2, convert wgs to xy
         lat, lon = WGS.latlon2xy(self.__wgs_polygon_border[:, 0], self.__wgs_polygon_border[:, 1])
@@ -158,6 +159,42 @@ class Field:
 
     def get_polygon_obstacle(self) -> np.ndarray:
         return self.__polygon_obstacle
+    
+    def get_exterior_border(self) -> np.ndarray:
+        return self.__polygon_border_shapely.exterior.xy
+    
+    def get_exterior_obstacle(self) -> np.ndarray:
+        return self.__polygon_obstacle_shapely.exterior.xy
+    
+    # REMOVE
+    def plot_operational_area(self, show=True) -> None:
+        """
+        This functions plots the border and the operational area. 
+        """
+
+        polygon_obstacle =  self.__polygon_obstacle_shapely
+        polygon_border = self.__polygon_border_shapely
+        xo, yo = polygon_obstacle.exterior.xy
+        xb, yb = polygon_border.exterior.xy
+        plt.plot(yo, xo, label="obstacle", c="orange")
+        plt.plot(yb, xb, label="border", c="green")
+        #plt.legend()
+        if show:
+            plt.show()
+
+    # REMOVE
+    def add_plot_operational_area(self,axs) -> None:
+        """
+        This functions plots the border and the operational area. 
+        """
+
+        polygon_obstacle =  self.__polygon_obstacle_shapely
+        polygon_border = self.__polygon_border_shapely
+        xo, yo = polygon_obstacle.exterior.xy
+        xb, yb = polygon_border.exterior.xy
+        #self.__polygon_obstacle_shapely = self.__config.get_polygon_obstacle_shapely()
+        axs.plot(yo, xo, label="obstacle", c="orange")
+        axs.plot(yb, xb, label="border", c="green")
 
 
 if __name__ == "__main__":

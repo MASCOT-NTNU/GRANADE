@@ -18,7 +18,7 @@ class AUVData:
                     prior_function, 
                     temporal_corrolation: bool = False,
                     tau: float = 0.4,
-                    phi_d: float = 200,
+                    phi_d: float = 300,
                     phi_t: float = 7200,
                     sigma: float = 2,
                     sampling_speed: float = 1,
@@ -89,14 +89,32 @@ class AUVData:
         self.max_points = max_points
 
 
-    def get_auv_all_salinity(self) -> np.ndarray:
+    def get_all_salinity(self) -> np.ndarray:
         return self.all_auv_data["salinity"]  
+    
+    def get_all_estimated_salinity(self) -> np.ndarray:
+        return self.all_auv_data["m"]
+    
+    def get_all_salinity_variance(self) -> np.ndarray:
+        return self.all_auv_data["dPsi"]
     
     def get_all_points(self) -> np.ndarray:
         return self.all_auv_data["S"]
     
+    def get_all_times(self) -> np.ndarray:
+        return self.all_auv_data["T"]
+    
+    def get_all_gradient(self) -> np.ndarray:
+        return self.all_auv_data["G"]
+    
+    def get_all_gradient_variance(self) -> np.ndarray:
+        return self.all_auv_data["Var_G"]
+    
     def get_last_point(self) -> np.ndarray:
         return self.auv_data["S"][-1]
+    
+    def get_all_prior(self) -> np.ndarray:
+        return self.all_auv_data["mu"]
     
     
     def get_auv_data(self) -> dict:
@@ -104,14 +122,23 @@ class AUVData:
     
     def get_auv_path_list(self) -> np.ndarray:
         return self.auv_data["path_list"]    
+    
+    def get_prior_salinity_field(self, t) -> np.ndarray:
+        return self.prior_function.get_salinity_field(0, t)
+    
+    def get_current_time(self) -> float:
+        return self.auv_data["T"][-1]
 
+    def get_points_in_memory(self) -> np.ndarray:
+        return self.auv_data["S"]
+    
+    def get_salinity_in_memory(self) -> np.ndarray:
+        return self.auv_data["salinity"]
 
     def cov_distance(self, d) -> np.ndarray:    
         # Returns the spatial corroalation for a distance d 
         return self.sigma**2 * np.exp(-(d / self.phi_d)**2)
 
-
-    # TODO: add a temporal corrolation function
     def cov_temporal(self, t) -> np.ndarray:
         # Returns the temporal corroalation for a time t 
         return np.exp(-(t / self.phi_t)**2)

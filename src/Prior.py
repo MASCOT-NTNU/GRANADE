@@ -147,6 +147,15 @@ class Prior:
     def get_salinity_loc(self, time_ind: int, depth_ind: int) -> np.ndarray:
         return self.sinmod_data_dict["salinity"][time_ind, depth_ind, :, :].reshape(-1,1)
     
+    def get_points_ocean(self) -> np.ndarray:
+        x = self.sinmod_data_dict["x"]
+        y = self.sinmod_data_dict["y"]
+        salinity_loc = self.get_salinity_loc(0,0)
+        ind_ocean = np.where((salinity_loc > 0))
+        points = np.array([x[ind_ocean],y[ind_ocean]]).T
+        return points
+
+    
 
 
     def get_salinity_loc_depth_t(self, depth: int, t: float) -> np.ndarray:
@@ -214,6 +223,7 @@ class Prior:
         
         return ind_below, ind_above
 
+
     def get_salinity_S_T(self, S: np.ndarray, T: np.ndarray) -> np.ndarray:
         # S points in the 2d plane
         # T time stamps 
@@ -273,5 +283,14 @@ class Prior:
             G_vec[i,1] = gy
         
         return points, G_vec
+    
+
+    def get_salinity_field(self, depth, t):
+        x = self.sinmod_data_dict["x"]
+        y = self.sinmod_data_dict["y"]
+        salinity_loc = self.get_salinity_loc_depth_t(depth, t).reshape(-1,1)
+        ind_ocean = np.where((salinity_loc > 0))
+        points = np.array([x[ind_ocean],y[ind_ocean]]).T
+        return points, salinity_loc[ind_ocean]
 
     

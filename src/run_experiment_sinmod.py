@@ -16,9 +16,9 @@ from scipy.spatial import distance_matrix
 
 
 # Import classes
-from field_SINMOD import field_SINMOD
+from Field import Field
 from WGS import WGS
-from field_operation import FieldOperation
+from Prior import Prior
 from AUV_data import AUVData
 from DescicionRule import DescicionRule
 from plotting_functions.plotting import PlotttingFunctions
@@ -37,35 +37,6 @@ def get_points(a,b,t_0):
     
     return S, T
 
-def get_data_transact(a, b, t_0, field_sinmod, add_noise_position=True, add_noise_data=True):
-    
-    # This gets the data along a transact
-    # We can add measurment noise and location noise
-    
-    # The measurment noise is defined by TAU
-    # THe measurment noise and position noise has mean 0 
-    
-    S , T = get_points(a,b,t_0)
-
-    if add_noise_position:
-        S = S + np.random.normal(0,0.2,S.shape) # need to add this again later
-    
-    n_samples = len(T)
-
-    mean = 0
-    noise = np.random.normal(mean, TAU, n_samples)
-
-    X = field_sinmod.get_salinity_S_T(S,T)
-
-    # TODO: Slow loop
-    #for i, p in enumerate(points):
-
-    #    measurments[i] = field_function(p)
-        
-    if add_noise_data:
-        X = X + noise
-        
-    return S, T, X
 
 
 #Parameters
@@ -85,13 +56,16 @@ SAMPLE_FREQ = 1
 # These are important parameters for the experiment
 n_directions = 8
 max_points = 10000
-horizion =  500
+horizion =  600
 r = 250
-n_iterations = 100
+n_iterations = 150
 init_r = 70
 file_num_prior = 6
-file_num_true_field = 1
+file_num_true_field = 6
 plot_iter = True
+add_random_field = True
+
+
 
 
 
@@ -109,11 +83,63 @@ for file in dir_list:
 print(sinmod_files)
 
 
-sinmod_field_prior = field_SINMOD(data_path + sinmod_files[file_num_prior])
-sinmod_field = field_SINMOD(data_path + sinmod_files[file_num_true_field])
-operation_field = FieldOperation()
+sinmod_field_prior = Prior(data_path + sinmod_files[file_num_prior])
+sinmod_field = Prior(data_path + sinmod_files[file_num_true_field])
+operation_field = Field()
 AUV_data = AUVData(sinmod_field_prior, temporal_corrolation=True)
 des_rule = DescicionRule("top_p_improvement")
+
+# Creating the random field 
+t1 = time.time()
+sigma_ranadom_field = 0.2
+field_points = sinmod_field.get_points_ocean()
+inds = np.random.choice(np.arange(len(field_points)), size=4000, replace=False)
+field_points = field_points[inds]
+covariance_matrix = AUV_data.make_covariance_matrix(field_points) + np.eye(len(field_points)) * 0.002 #Add something to make the matrix positive definite
+print("covariance_matrix", covariance_matrix.shape)
+print("field_points", field_points.shape)
+L = np.linalg.cholesky(covariance_matrix)
+sample = np.random.normal(0,sigma_ranadom_field,len(field_points))
+random_field = L @ sample
+random_field_function = interpolate.CloughTocher2DInterpolator(field_points, random_field, tol = 0.1)
+field_points = sinmod_field.get_points_ocean()
+plt.scatter(field_points[:,0], field_points[:,1], c=random_field_function(field_points))
+plt.colorbar()
+plt.show()
+
+t2 = time.time()
+print("== Time to create random field ==", t2 - t1)
+
+
+
+def get_data_transact(a, b, t_0, field_sinmod, time_shift=0, add_noise_position=True, add_noise_data=True, add_random_field=True):
+    
+    # This gets the data along a transact
+    # We can add measurment noise and location noise
+    
+    # The measurment noise is defined by TAU
+    # THe measurment noise and position noise has mean 0 
+    S , T = get_points(a,b,t_0 )
+
+    if add_noise_position:
+        S = S + np.random.normal(0,0.4,S.shape) # need to add this again later
+    
+    n_samples = len(T)
+
+    mean = 0
+    noise = np.random.normal(mean, TAU, n_samples)
+
+    X = field_sinmod.get_salinity_S_T(S,T + time_shift)
+
+        
+    if add_noise_data:
+        X = X + noise
+
+    if add_random_field:
+        X = X + random_field_function(S)
+
+    return S, T, X
+
 
     
 ## This function runs an experiment with the specifications descided
@@ -181,7 +207,7 @@ for i in range(n_iterations):
                 end_points.append(b)
                 plt.plot([a[0], b[0]],[a[1], b[1]], c="green")
             else:
-                closest_legal_point = np.flip(operation_field.get_closest_intersect_points(np.flip(a),np.flip(b)))
+                closest_legal_point = np.flip(operation_field.get_closest_intersect_point(np.flip(a),np.flip(b)))
                 # TODO add the endpoint in a safe way
                 #end_points.append(closest_legal_point)
                 plt.plot([a[0], b[0]],[a[1], b[1]], c="red")
@@ -213,41 +239,81 @@ for i in range(n_iterations):
 
     curr_time = AUV_data.auv_data["T"][-1]
 
-    iter_speed.append(time.time() - t_1)
+    
     
 
     plotting_time = time.time()
     if plot_iter:
+        # Plotting the iteration 
         plotter = PlotttingFunctions(AUV_data, operation_field, sinmod_field)
-        fig, ax = plt.subplots(1,2,figsize=(20,10))
+        fig, ax = plt.subplots(3,4,figsize=(15,15), gridspec_kw={'width_ratios': [20, 1, 20, 1]})
 
-        plotter.axs_add_limits(ax[0])
-        plotter.plot_measured_salinity(ax[0])
-        plotter.plot_kriege_variance(ax[0])
-        plotter.add_operational_limits(ax[0])
-        plotter.plot_path(ax[0])
-        plotter.plot_descicion_paths(ax[0], direction_data)
+        # Setting the title for the figure
+        iteration_str = "iteration: " + str(i) + "\n"
+        total_dist_str = "Total distance: " + str(np.round(((i + 1) * r)/1000,2)) + " km \n"
+        total_time_str = "Total time: " + str(np.round((curr_time - experiment_start_t)/3600,2)) + " hours \n"
+        fig.suptitle(iteration_str + total_dist_str + total_time_str, fontsize=16)
 
-        plotter.axs_add_limits(ax[1])
-        plotter.plot_measured_salinity(ax[1])
-        plotter.plot_kriege_salinity(ax[1])
-        plotter.add_operational_limits(ax[1])
-        plotter.plot_path(ax[1])
-        plotter.plot_descicion_paths(ax[1], direction_data)
+        plotter.axs_add_limits(ax[0,0])
+        plotter.plot_measured_salinity(ax[0,0])
+        plotter.plot_kriege_variance(ax[0,0])
+        plotter.add_operational_limits(ax[0,0])
+        plotter.plot_path(ax[0,0])
+        plotter.plot_descicion_paths(ax[0,0], direction_data)
+        plotter.add_noth_arrow(ax[0,0])
+        plotter.add_one_kilometer(ax[0,0])
+        ax[0,0].set_title("Conditional variance")
+
+        plotter.add_colorbar_variance(ax[0,1], fig)
+
+        plotter.axs_add_limits(ax[0,2]) 
+        plotter.plot_measured_salinity(ax[0,2])
+        plotter.plot_kriege_gradient(ax[0,2])
+        plotter.add_operational_limits(ax[0,2])
+        plotter.plot_path(ax[0,2])
+        plotter.plot_descicion_paths(ax[0,2], direction_data)
+        ax[0,1].set_title("Conditional gradient")
+
+        plotter.add_colorbar_gradient(ax[0,3], fig)
+
+        plotter.plot_salinity_in_memory(ax[1,0])
+        plotter.add_operational_limits(ax[1,0])
+        ax[1,0].set_title("Salinity in memory # = " + str(len(AUV_data.auv_data["S"])))
+
+        plotter.add_colorbar_salinity(ax[1,1], fig)
+
+        plotter.plot_kriege_salinity(ax[1,2])
+        plotter.add_operational_limits(ax[1,2])
+        ax[1,2].set_title("Kriging salinity")
+
+        plotter.add_colorbar_salinity(ax[1,3], fig)
+
+        plotter.plot_estimated_directional_gradient(ax[2,0])
+        ax[2,0].set_title("Estimated directional gradient")
+
+        
+        plotter.plot_estimated_salinity(ax[2,2])
+        plotter.plot_measured_salinity(ax[2,2])
+        plotter.plot_prior_path(ax[2,2])
+        ax[2,2].set_title("Estimated salinity")
+
 
         plt.savefig("src/plots/dashboard/dashboard_"+ str(i) + '.png', dpi=150)
         plt.close()
     plotting_time = time.time() - plotting_time
 
     # Get data from this field 
-    S, T, salinity = get_data_transact(a, b ,curr_time, sinmod_field) 
+    S, T, salinity = get_data_transact(a, b ,curr_time, sinmod_field, time_shift=1000) 
 
     ## First go in a random direct
     AUV_data.add_new_datapoints(S,T,salinity)
-    
-    print(i," Time for iteration: ", round(time.time() - t_1, 2))
 
-    if iter_speed[-1] - plotting_time > 5:
+    iter_speed.append(time.time() - t_1 - plotting_time)
+    print(i," Time for iteration: ", round(iter_speed[-1], 2))
+    if plot_iter:
+        print("Time for plotting: ", round(plotting_time, 2))
+
+    if iter_speed[-1] > 5:
         AUV_data.down_sample_points()
             
     
