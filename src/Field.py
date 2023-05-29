@@ -152,7 +152,7 @@ class Field:
                     intersect_points[k] = p
                     k += 1
 
-        return intersect_points
+        return np.array(intersect_points)
     
     def get_polygon_border(self) -> np.ndarray:
         return self.__polygon_border

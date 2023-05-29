@@ -98,6 +98,7 @@ class Prior:
         datetime_str = this_date + " " + time_day_start
         datetime_seconds = datetime.fromisoformat(datetime_str)
         self.start_time_s = datetime_seconds
+        # This is the time in seconds since 1970
         self.sinmod_data_dict["time_stamp_s"] = datetime_seconds.timestamp() + self.sinmod_data_dict["time_stamps"]  * 24 * 60 * 60
         
 
@@ -286,6 +287,9 @@ class Prior:
     
 
     def get_salinity_field(self, depth, t):
+        if t < np.min(self.sinmod_data_dict["time_stamp_s"]) or t > np.max(self.sinmod_data_dict["time_stamp_s"]):
+            print("t is not in the time interval of the simulation")
+            raise ValueError("t is not in the time interval of the simulation")
         x = self.sinmod_data_dict["x"]
         y = self.sinmod_data_dict["y"]
         salinity_loc = self.get_salinity_loc_depth_t(depth, t).reshape(-1,1)

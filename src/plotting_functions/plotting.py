@@ -3,12 +3,14 @@ import matplotlib as mpl
 import numpy as np  
 from scipy import interpolate
 
+from utility_func import *
+
 
 
 class PlotttingFunctions:
 
     def __init__(self,AUVData,FieldOperation,field_SINMOD,
-                 slinity_lim_low = 10,
+                 slinity_lim_low = 18,
                  salinity_lim_high = 30) -> None:
         self.auv_data = AUVData
         self.field_operation = FieldOperation
@@ -20,6 +22,7 @@ class PlotttingFunctions:
         self.gradient_lim_low = 0
         self.gradient_lim_high = 0.02
 
+        # Grid limits
         self.x_lim_low = -3000
         self.x_lim_high = 2400
         self.y_lim_low = 0
@@ -27,13 +30,18 @@ class PlotttingFunctions:
 
 
         # Color maps
-        self.cmap_salinity = "viridis"
+        self.cmap_salinity = "turbo"
         self.cmap_gradient = "Reds"
         self.cmap_variance = "bwr"
 
         # Kriege field functions
         self.salinity_kriege_func = None
         self.variance_kriege_func = None
+
+
+    @staticmethod
+    def sliding_average(x, window_size):
+        return np.convolve(x, np.ones(window_size), 'valid') / window_size
 
         
     def plot_path(self, axis):
@@ -111,7 +119,19 @@ class PlotttingFunctions:
         interplate_points = self.field_sinmod.get_points_ocean()
         interpolate_values = self.salinity_kriege_func(interplate_points)
         # Plot the interpolated values
-        axis.scatter(interplate_points[:,0],interplate_points[:,1], c=interpolate_values,vmin=self.slinity_lim_low, vmax=self.salinity_lim_high, cmap=self.cmap_salinity, label="Kriging field")
+
+        # Check if there are any nan values
+        if np.count_nonzero(np.isnan(interpolate_values)) == 0:
+            axis.scatter(interplate_points[:,0],interplate_points[:,1], c=interpolate_values,vmin=self.slinity_lim_low, vmax=self.salinity_lim_high, cmap=self.cmap_salinity, label="Kriging field")
+        else:
+
+            if np.count_nonzero(np.isnan(interpolate_values)) > 0.5*len(interpolate_values):
+                self.kriege_field()
+                interpolate_values = self.salinity_kriege_func(interplate_points)
+
+            inds = np.where(~np.isnan(interpolate_values))
+            axis.scatter(interplate_points[inds,0],interplate_points[inds,1], c=interpolate_values[inds],vmin=self.slinity_lim_low, vmax=self.salinity_lim_high, cmap=self.cmap_salinity, label="Kriging field")
+
 
     def plot_kriege_gradient(self, axis, delta=0.0001):
 
@@ -137,9 +157,27 @@ class PlotttingFunctions:
         # The absolute value of the gradient
         G_abs = np.linalg.norm(G_vec,axis=1)
 
-        # Plot the interpolated values
-        axis.scatter(interplate_points[:,0],interplate_points[:,1], c=G_abs,vmin=self.gradient_lim_low, vmax=self.gradient_lim_high, cmap=self.cmap_gradient, label="Kriging gradient")
+        # Check if there are any nan values
+        if np.count_nonzero(np.isnan(G_abs)) == 0:
+            # Plot the interpolated values
+            axis.scatter(interplate_points[:,0],interplate_points[:,1], c=G_abs,vmin=self.gradient_lim_low, vmax=self.gradient_lim_high, cmap=self.cmap_gradient, label="Kriging gradient")
 
+        else:
+            
+            if np.count_nonzero(np.isnan(G_abs)) > 0.5*len(G_abs):
+                self.kriege_field()
+                for i, xy in enumerate(interplate_points):
+
+                    gx = (self.salinity_kriege_func(xy + dx) - self.salinity_kriege_func(xy - dx)) / (2*delta)
+                    gy = (self.salinity_kriege_func(xy + dy) - self.salinity_kriege_func(xy - dy)) / (2*delta)
+                    G_vec[i,0] = gx
+                    G_vec[i,1] = gy
+
+            # The absolute value of the gradient
+            G_abs = np.linalg.norm(G_vec,axis=1)
+
+            inds = np.where(~np.isnan(G_abs))
+            axis.scatter(interplate_points[inds,0],interplate_points[inds,1], c=G_abs[inds],vmin=self.gradient_lim_low, vmax=self.gradient_lim_high, cmap=self.cmap_gradient, label="Kriging gradient")
 
     def plot_kriege_variance(self, axis):
 
@@ -160,8 +198,6 @@ class PlotttingFunctions:
         axis.scatter(points[:,0],points[:,1], c=field,vmin=self.slinity_lim_low, vmax=self.salinity_lim_high, cmap=self.cmap_salinity, label="Prior field")
 
 
-
-
     def add_operational_limits(self, axis):
         # plot the operational limits of the AUV
         xb, yb = self.field_operation.get_exterior_border()
@@ -172,10 +208,10 @@ class PlotttingFunctions:
     
     def plot_estimated_directional_gradient(self, axis):
         T = self.auv_data.get_all_times()
-        G = self.auv_data.get_all_gradient()
-        Var_G = self.auv_data.get_all_gradient_variance()
-        axis.plot(T[0:-1],G, label="Estimated gradient", c="blue")
-        axis.fill_between(T[0:-1], G- np.sqrt(Var_G)*1.645 , G+np.sqrt(Var_G)*1.645, alpha=0.2, color="blue", label="95% confidence interval")
+        G =  self.sliding_average(self.auv_data.get_all_gradient() , 10)
+        Var_G = self.sliding_average(self.auv_data.get_all_gradient_variance(), 10)
+        axis.plot(T[0:len(G)],G, label="Estimated gradient", c="blue")
+        axis.fill_between(T[0:len(G)], G- np.sqrt(Var_G)*1.645 , G+np.sqrt(Var_G)*1.645, alpha=0.2, color="blue", label="95% confidence interval")
         
 
     def plot_estimated_salinity(self, axis):
@@ -211,3 +247,49 @@ class PlotttingFunctions:
         cmap = self.cmap_variance
         norm = mpl.colors.Normalize(vmin=0, vmax=1)
         cbo = fig.colorbar(mpl.cm.ScalarMappable(norm=norm, cmap=cmap), cax=axis, label='Variance [psu^2]')
+
+
+    def scatter_estimated_salinity_prior(self, axis):
+        mu = self.auv_data.get_all_prior()
+        m = self.auv_data.get_all_estimated_salinity()
+        k = 1000
+        min_salinity = np.nanmin(m)
+        max_salinity = np.nanmax(m)
+        if len(mu) > k:
+            # Randomly select k points
+            inds = np.random.choice(len(mu), k, replace=False)
+            axis.scatter(mu[inds],m[inds], label="Estimated salinity",alpha=0.2, c="red", marker="o", linestyle="None")
+        else:
+            axis.scatter(mu,m, label="Estimated salinity",alpha=0.2, c="red", marker="o", linestyle="None")  
+
+        # Plot a line for the corrolation
+        axis.plot([min_salinity,max_salinity],[min_salinity,max_salinity], c="black", linestyle="dashed") 
+
+
+    def scatter_measured_salinity_prior(self, axis):
+        mu = self.auv_data.get_all_prior()
+        measured_salinity = self.auv_data.get_all_salinity()
+        min_salinity = np.nanmin(measured_salinity)
+        max_salinity = np.nanmax(measured_salinity)
+        k = 1000
+        if len(mu) > k:
+            # Randomly select k points
+            inds = np.random.choice(len(mu), k, replace=False)
+            axis.scatter(mu[inds],measured_salinity[inds],alpha=0.2, label="Measured salinity", c="red", marker="o", linestyle="None")
+        else:
+            axis.scatter(mu,measured_salinity,alpha=0.2, label="Measured salinity", c="red", marker="o", linestyle="None")   
+
+        # Plot a line for the corrolation
+        axis.plot([min_salinity,max_salinity],[min_salinity,max_salinity], c="black", linestyle="dashed")
+
+
+    def plot_true_field(self, axis ,t,random_field_function):
+        depth = 1
+        points, field = self.field_sinmod.get_salinity_field(depth, t)
+        field = field #+ random_field_function(points)
+        axis.scatter(points[:,0],points[:,1], c=field,vmin=self.slinity_lim_low, vmax=self.salinity_lim_high, cmap=self.cmap_salinity, label="True field")
+
+    def plot_prior_field(self, axis):
+        t = self.auv_data.get_current_time()
+        points, field = self.auv_data.prior_function.get_salinity_field(1, t)
+        axis.scatter(points[:,0],points[:,1], c=field,vmin=self.slinity_lim_low, vmax=self.salinity_lim_high, cmap=self.cmap_salinity, label="Prior field")

@@ -8,7 +8,6 @@ import time
 
 # TODO:
 # add a step index list
-# add a way to reduce the number of points based on speed
 
 
 
@@ -19,7 +18,7 @@ class AUVData:
                     temporal_corrolation: bool = False,
                     tau: float = 0.4,
                     phi_d: float = 300,
-                    phi_t: float = 7200,
+                    phi_t: float = 4800,
                     sigma: float = 2,
                     sampling_speed: float = 1,
                     auv_speed: float = 1.6,
@@ -85,6 +84,9 @@ class AUVData:
     def get_max_points(self) ->  float:
         return self.max_points
     
+    def get_time_elapsed(self) ->  float:
+        return self.all_auv_data["T"][-1] - self.all_auv_data["T"][0]
+    
     def set_max_points(self, max_points):
         self.max_points = max_points
 
@@ -137,7 +139,7 @@ class AUVData:
 
     def cov_distance(self, d) -> np.ndarray:    
         # Returns the spatial corroalation for a distance d 
-        return self.sigma**2 * np.exp(-(d / self.phi_d)**2)
+        return self.sigma**2 * np.exp(-(d / (2 * self.phi_d))**2)
 
     def cov_temporal(self, t) -> np.ndarray:
         # Returns the temporal corroalation for a time t 
@@ -162,6 +164,10 @@ class AUVData:
             T_matrix = self.distance_matrix_one_dimension(T_1,T_2)          
             return self.cov_distance(D_matrix) * self.cov_temporal(T_matrix)
         return self.cov_distance(D_matrix)
+    
+    def prior_correction(self):
+        pass
+
 
 
     def update_covariance_matrix(self, old_cov_matrix,S_old, S_new,T_old=np.empty(1), T_new=np.empty(1)) -> np.ndarray:
@@ -211,7 +217,6 @@ class AUVData:
 
     def add_first_points(self, S, T, salinity):
 
-
         # Improve the path list
         self.auv_data["path_list"] = []
         self.auv_data["path_list"].append(S[0])
@@ -224,11 +229,11 @@ class AUVData:
         self.auv_data["salinity"] = salinity
         self.auv_data["used_points"] = np.repeat(True, len(salinity))
 
-       
-
 
         # get the prior for the new points
         mu = self.prior_function.get_salinity_S_T(S, T)
+        if np.nanmin(mu) < 0:
+            print("Negative prior") # Remove ????
         Sigma = self.make_covariance_matrix(S, T)
 
         # Gets the conditonal mean and variance
@@ -264,7 +269,6 @@ class AUVData:
         # - G
         # - Var_G
 
-
         if self.auv_data["has_points"] == False:
             self.add_first_points(S_new, T_new, salinity_new)
         
@@ -286,6 +290,8 @@ class AUVData:
             
             # get the prior for the new points
             mu_new = self.prior_function.get_salinity_S_T(S_new, T_new)
+            if np.nanmin(mu_new) < 0:
+                print("Negative prior") # Remove ????
             
             # Update the covariance matrix, this saves some time
             n_old, n_new = len(salinity), len(salinity_new)

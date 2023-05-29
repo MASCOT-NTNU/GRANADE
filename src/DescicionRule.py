@@ -2,6 +2,8 @@ import numpy as np
 import random
 from scipy.stats import norm
 
+# TODO: add descsion metrics to the return data
+
 
 class DescicionRule:
 
@@ -45,6 +47,58 @@ class DescicionRule:
             return self.highest_max_variance(direction_data, auv_data)
         
         print(self.rule," is not a method")
+
+
+    @staticmethod
+    def sliding_average(x, window_size):
+        return np.convolve(x, np.ones(window_size), 'valid') / window_size
+    
+
+    def descicion_top_p_improvement(self, direction_data, auv_data):
+        n = direction_data["n_directions"]
+        G = auv_data["G"]
+        abs_G = np.abs(G)
+        max_g = np.max(self.sliding_average(abs_G, 10)) 
+        
+        a = auv_data["S"][-1]
+        
+        p = 0.2
+        
+        best_direction_ind = 0
+        average_improvement_max = 0
+        best_end_point = direction_data["end_points"][0]
+        
+        descicion = {}
+        descicion["end_points"] = direction_data["end_points"]
+        descicion["metric"] = "top_p_improvement"
+        descicion["scores"] = []
+        for j in range(n):
+            G = direction_data["gradient_directions"][j]
+            Var_G = direction_data["var_gradient_directions"][j]
+            b = direction_data["end_points"][j]
+            
+        
+            Sd_G = np.sqrt(Var_G)
+            
+            I_pluss = (G - max_g) * (1 - norm.cdf((max_g - G) / Sd_G))  + Sd_G * norm.pdf((max_g -G) / Sd_G)
+            I_minus = (-G - max_g) * norm.cdf((- max_g - G) / Sd_G)  + Sd_G * norm.pdf((-max_g - G) / Sd_G)
+
+            expected_improvement = I_pluss + I_minus
+            
+            k = int(p * len(expected_improvement))
+            
+            avg_improvement_dir = np.average(np.sort(expected_improvement)[-k:])
+            descicion["scores"].append(avg_improvement_dir)
+
+            if avg_improvement_dir > average_improvement_max and np.linalg.norm(b-a) > 5:
+                best_direction_ind = j
+                average_improvement_max = avg_improvement_dir
+                best_end_point = b
+
+        ###################################
+        descicion["end_point"] = best_end_point
+        descicion["direction_ind"] = best_direction_ind
+        return descicion
         
 
         
@@ -106,7 +160,7 @@ class DescicionRule:
                 avg_prob_best = avg_prob_dir
                 best_end_point = b
 
-            ###################################
+        ###################################
         descicion = {"end_point": best_end_point, "direction_ind": best_direction_ind}
         return descicion
 
@@ -229,45 +283,7 @@ class DescicionRule:
         return descicion
 
 
-    def descicion_top_p_improvement(self, direction_data, auv_data):
-        n = direction_data["n_directions"]
-        G = auv_data["G"]
-        max_g = np.max(np.abs(G)) 
-        
-        a = auv_data["S"][-1]
-        
-        p = 0.2
-        
-        best_direction_ind = 0
-        average_improvement_max = 0
-        best_end_point = direction_data["end_points"][0]
-        
-        for j in range(n):
-            G = direction_data["gradient_directions"][j]
-            Var_G = direction_data["var_gradient_directions"][j]
-            b = direction_data["end_points"][j]
-            
-        
-            Sd_G = np.sqrt(Var_G)
-            
-            I_pluss = (G - max_g) * (1 - norm.cdf((max_g - G) / Sd_G))  + Sd_G * norm.pdf((max_g -G) / Sd_G)
-            I_minus = (-G - max_g) * norm.cdf((- max_g - G) / Sd_G)  + Sd_G * norm.pdf((-max_g - G) / Sd_G)
 
-            expected_improvement = I_pluss + I_minus
-            
-            k = int(p * len(expected_improvement))
-            
-            avg_improvement_dir = np.average(np.sort(expected_improvement)[-k:])
-
-
-            if avg_improvement_dir > average_improvement_max and np.linalg.norm(b-a) > 5:
-                best_direction_ind = j
-                average_improvement_max = avg_improvement_dir
-                best_end_point = b
-
-            ###################################
-        descicion = {"end_point": best_end_point, "direction_ind": best_direction_ind}
-        return descicion
 
 
 

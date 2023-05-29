@@ -56,12 +56,12 @@ SAMPLE_FREQ = 1
 # These are important parameters for the experiment
 n_directions = 8
 max_points = 10000
-horizion =  600
+horizion =  800
 r = 250
-n_iterations = 150
+n_iterations = 250
 init_r = 70
-file_num_prior = 6
-file_num_true_field = 6
+file_num_prior = 2
+file_num_true_field = 7
 plot_iter = True
 add_random_field = True
 
@@ -102,13 +102,14 @@ L = np.linalg.cholesky(covariance_matrix)
 sample = np.random.normal(0,sigma_ranadom_field,len(field_points))
 random_field = L @ sample
 random_field_function = interpolate.CloughTocher2DInterpolator(field_points, random_field, tol = 0.1)
+t2 = time.time()
+print("== Time to create random field ==", t2 - t1)
 field_points = sinmod_field.get_points_ocean()
 plt.scatter(field_points[:,0], field_points[:,1], c=random_field_function(field_points))
 plt.colorbar()
-plt.show()
+plt.close()
 
-t2 = time.time()
-print("== Time to create random field ==", t2 - t1)
+
 
 
 
@@ -145,9 +146,21 @@ def get_data_transact(a, b, t_0, field_sinmod, time_shift=0, add_noise_position=
 ## This function runs an experiment with the specifications descided
 ## by the parameters. 
 
-# Keeping time of the experiment
+# This is the start time for the true field
 experiment_start_t = sinmod_field.get_time_steps_seconds()[0]
 
+# This is the start time for the prior field
+prior_start_t = AUV_data.prior_function.get_time_steps_seconds()[0]
+
+# This is the time shift between the two fields
+diff_time = experiment_start_t - prior_start_t
+
+if np.abs(diff_time) > 1:
+    print("There is a time shift between the prior and the true field")
+
+
+# There is a time shift between the prior and the true field
+# this means that the interpolation function returns the wrong value
 
 
 direction_data_list = []
@@ -159,6 +172,13 @@ descicions = []
 start = np.array([1000, 3000])
     
 # Finding a random direction to go in
+start_x = np.random.uniform(-2500, 2000)
+start_y = np.random.uniform(1000, 5000)
+start = np.array([start_x, start_y])
+while operation_field.is_loc_legal(np.flip(start)) == False:
+    start_x = np.random.uniform(-2500, 2000)
+    start_y = np.random.uniform(1000, 5000)
+    start = np.array([start_x, start_y])
 a = start
 theta =  np.random.rand(1) * np.pi * 2 
 
@@ -169,10 +189,11 @@ while operation_field.is_path_legal(np.flip(a),np.flip(b)) == False:
     print(b)
 
 # Get data from this field 
-S, T, salinity = get_data_transact(a,b,experiment_start_t, sinmod_field) 
+S, T, salinity = get_data_transact(a, b, experiment_start_t, sinmod_field, time_shift=1000) 
 
 ## First go in a random direct
-AUV_data.add_new_datapoints(S,T,salinity)
+# Need to change the time to make it correct
+AUV_data.add_new_datapoints(S, T - diff_time,salinity)
 
 
 # Iteration speed
@@ -201,7 +222,7 @@ for i in range(n_iterations):
         angle = np.arccos(np.clip(c, -1, 1)) # if you really want the angle
 
         # Nu U-turn, the higher the number the higher the movement freedom 
-        if angle  > np.pi/4:
+        if angle  > np.pi/6:
 
             if operation_field.is_path_legal(np.flip(a),np.flip(b)):
                 end_points.append(b)
@@ -246,7 +267,7 @@ for i in range(n_iterations):
     if plot_iter:
         # Plotting the iteration 
         plotter = PlotttingFunctions(AUV_data, operation_field, sinmod_field)
-        fig, ax = plt.subplots(3,4,figsize=(15,15), gridspec_kw={'width_ratios': [20, 1, 20, 1]})
+        fig, ax = plt.subplots(3,6,figsize=(15,15), gridspec_kw={'width_ratios': [20, 1, 20, 1,20,1]})
 
         # Setting the title for the figure
         iteration_str = "iteration: " + str(i) + "\n"
@@ -263,6 +284,7 @@ for i in range(n_iterations):
         plotter.add_noth_arrow(ax[0,0])
         plotter.add_one_kilometer(ax[0,0])
         ax[0,0].set_title("Conditional variance")
+        
 
         plotter.add_colorbar_variance(ax[0,1], fig)
 
@@ -276,17 +298,27 @@ for i in range(n_iterations):
 
         plotter.add_colorbar_gradient(ax[0,3], fig)
 
+        time_elapsed = AUV_data.get_time_elapsed()
+        plotter.plot_true_field(ax[0,4],experiment_start_t + time_elapsed,random_field_function)
+        ax[0,4].set_title("True field")
+        plotter.add_colorbar_salinity(ax[0,5], fig)
+
+
         plotter.plot_salinity_in_memory(ax[1,0])
         plotter.add_operational_limits(ax[1,0])
         ax[1,0].set_title("Salinity in memory # = " + str(len(AUV_data.auv_data["S"])))
 
         plotter.add_colorbar_salinity(ax[1,1], fig)
 
+        plotter.axs_add_limits(ax[1,2])
         plotter.plot_kriege_salinity(ax[1,2])
         plotter.add_operational_limits(ax[1,2])
         ax[1,2].set_title("Kriging salinity")
 
         plotter.add_colorbar_salinity(ax[1,3], fig)
+
+        plotter.scatter_measured_salinity_prior(ax[1,4])
+        ax[1,4].set_title("Measured salinity prior")
 
         plotter.plot_estimated_directional_gradient(ax[2,0])
         ax[2,0].set_title("Estimated directional gradient")
@@ -296,6 +328,11 @@ for i in range(n_iterations):
         plotter.plot_measured_salinity(ax[2,2])
         plotter.plot_prior_path(ax[2,2])
         ax[2,2].set_title("Estimated salinity")
+        ax[2,2].legend()
+
+        plotter.scatter_estimated_salinity_prior(ax[2,4])
+        ax[2,4].set_title("Estimated salinity prior")
+        ax[2,4].legend()
 
 
         plt.savefig("src/plots/dashboard/dashboard_"+ str(i) + '.png', dpi=150)
@@ -303,10 +340,11 @@ for i in range(n_iterations):
     plotting_time = time.time() - plotting_time
 
     # Get data from this field 
-    S, T, salinity = get_data_transact(a, b ,curr_time, sinmod_field, time_shift=1000) 
+    time_elapsed = AUV_data.get_time_elapsed()
+    S, T, salinity = get_data_transact(a, b ,experiment_start_t + time_elapsed, sinmod_field, time_shift=1000) 
 
     ## First go in a random direct
-    AUV_data.add_new_datapoints(S,T,salinity)
+    AUV_data.add_new_datapoints(S,T - diff_time,salinity)
 
     iter_speed.append(time.time() - t_1 - plotting_time)
     print(i," Time for iteration: ", round(iter_speed[-1], 2))
