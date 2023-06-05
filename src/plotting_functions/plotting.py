@@ -1,5 +1,6 @@
 import matplotlib.pyplot as plt
 import matplotlib as mpl
+import matplotlib.pylab as pl
 import numpy as np  
 from scipy import interpolate
 
@@ -9,18 +10,30 @@ from utility_func import *
 
 class PlotttingFunctions:
 
-    def __init__(self,AUVData,FieldOperation,field_SINMOD,
+    def __init__(self,AUVData,FieldOperation,field_SINMOD,descicion,direction_data,
                  slinity_lim_low = 18,
-                 salinity_lim_high = 30) -> None:
+                 salinity_lim_high = 30,
+                 gradient_lim_low = 0,
+                 gradient_lim_high = 0.03, 
+                 error_lim_low = -3, 
+                 error_lim_high = 3) -> None:
+        
+        # Functions 
         self.auv_data = AUVData
         self.field_operation = FieldOperation
-        self.field_sinmod = field_SINMOD    
+        self.field_sinmod = field_SINMOD 
+        self.descicion = descicion
+        self.direction_data = direction_data
 
         # Plotting limits
         self.slinity_lim_low = slinity_lim_low
         self.salinity_lim_high = salinity_lim_high
-        self.gradient_lim_low = 0
-        self.gradient_lim_high = 0.02
+        self.gradient_lim_low = gradient_lim_low
+        self.gradient_lim_high = gradient_lim_high
+        self.score_low = min(descicion["scores"])
+        self.score_high = max(descicion["scores"])
+        self.error_low = error_lim_low
+        self.error_high = error_lim_high
 
         # Grid limits
         self.x_lim_low = -3000
@@ -33,6 +46,8 @@ class PlotttingFunctions:
         self.cmap_salinity = "turbo"
         self.cmap_gradient = "Reds"
         self.cmap_variance = "bwr"
+        self.cmap_score = "viridis"
+        self.cmap_error = "PiYG"
 
         # Kriege field functions
         self.salinity_kriege_func = None
@@ -44,10 +59,13 @@ class PlotttingFunctions:
         return np.convolve(x, np.ones(window_size), 'valid') / window_size
 
         
-    def plot_path(self, axis):
+    def plot_path(self, axis , max_points=10**10):
         # plot the path of the AUV
         path_list = np.array(self.auv_data.get_auv_path_list())
-        axis.plot(path_list[:,0],path_list[:,1], color="black", label="AUV path")
+        if len(path_list) > max_points:
+            axis.plot(path_list[:,0][-max_points:],path_list[:,1][-max_points:], color="black", label="AUV path")
+        else:
+            axis.plot(path_list[:,0],path_list[:,1], color="black", label="AUV path")
 
     def add_noth_arrow(self, axis ,a=[-2500, 3500]):
         # Add a north arrow
@@ -71,7 +89,8 @@ class PlotttingFunctions:
         end_points = direction_data["end_points"]
         start_point = self.auv_data.get_auv_path_list()[-1]
         for p in end_points:
-            axis.plot([start_point[0],p[0]],[start_point[1],p[1]], color="Green", label="Descicion path")
+            axis.plot([start_point[0],p[0]],[start_point[1],p[1]], color="Green") #, label="Descicion path")
+        axis.plot(color="Green", label="Descicion path")
 
     def plot_measured_salinity(self, axis):
         # plot the path of the AUV
@@ -85,9 +104,9 @@ class PlotttingFunctions:
         salinity = self.auv_data.get_salinity_in_memory()
         axis.scatter(S[:,0],S[:,1], c=salinity,vmin=self.slinity_lim_low, vmax=self.salinity_lim_high, cmap=self.cmap_salinity, label="AUV path")
 
-    def plot_gradient_sinmod(self, axis, time_step):
+    def plot_gradient_sinmod(self, axis, t):
         # plot the gradient of the SINMOD field
-        points, G_vec = self.field_sinmod.get_gradient_field(time_step,0)
+        points, G_vec = self.field_sinmod.get_gradient_field(t,0)
         G_abs = np.linalg.norm(G_vec,axis=1)
         axis.scatter(points[:,0],points[:,1], c=G_abs, vmin=self.gradient_lim_low, vmax=self.gradient_lim_high, cmap=self.cmap_gradient, label="Gradient field")
 
@@ -202,7 +221,7 @@ class PlotttingFunctions:
         # plot the operational limits of the AUV
         xb, yb = self.field_operation.get_exterior_border()
         xo, yo = self.field_operation.get_exterior_obstacle()
-        axis.plot(yo, xo, label="obstacle", c="orange")
+        axis.plot(yo, xo, label="Munkholmen", c="orange")
         axis.plot(yb, xb, label="border", c="green")
 
     
@@ -211,7 +230,7 @@ class PlotttingFunctions:
         G =  self.sliding_average(self.auv_data.get_all_gradient() , 10)
         Var_G = self.sliding_average(self.auv_data.get_all_gradient_variance(), 10)
         axis.plot(T[0:len(G)],G, label="Estimated gradient", c="blue")
-        axis.fill_between(T[0:len(G)], G- np.sqrt(Var_G)*1.645 , G+np.sqrt(Var_G)*1.645, alpha=0.2, color="blue", label="95% confidence interval")
+        axis.fill_between(T[0:len(G)], G- np.sqrt(Var_G)*1.960 , G+np.sqrt(Var_G)*1.960, alpha=0.2, color="blue", label="95% confidence interval")
         
 
     def plot_estimated_salinity(self, axis):
@@ -219,7 +238,7 @@ class PlotttingFunctions:
         m = self.auv_data.get_all_estimated_salinity()
         Var_m = self.auv_data.get_all_salinity_variance()
         axis.plot(T,m, label="Estimated salinity", c="red")
-        axis.fill_between(T, m- np.sqrt(Var_m)*1.645 , m+np.sqrt(Var_m)*1.645, alpha=0.2, color="red", label="95% confidence interval")
+        axis.fill_between(T, m- np.sqrt(Var_m)*1.960 , m+np.sqrt(Var_m)*1.960, alpha=0.2, color="red", label="95% confidence interval")
 
     def plot_measured_salinity(self, axis):
         T = self.auv_data.get_all_times()
@@ -248,11 +267,21 @@ class PlotttingFunctions:
         norm = mpl.colors.Normalize(vmin=0, vmax=1)
         cbo = fig.colorbar(mpl.cm.ScalarMappable(norm=norm, cmap=cmap), cax=axis, label='Variance [psu^2]')
 
+    def add_colorbar_score(self, axis, fig):
+        cmap = self.cmap_score
+        norm = mpl.colors.Normalize(vmin=self.score_low, vmax=self.score_high)
+        cbo = fig.colorbar(mpl.cm.ScalarMappable(norm=norm, cmap=cmap), cax=axis, label='Score')
+
+    def add_colorbar_error(self, axis, fig):
+        cmap = self.cmap_error
+        norm = mpl.colors.Normalize(vmin=self.error_low, vmax=self.error_high)
+        cbo = fig.colorbar(mpl.cm.ScalarMappable(norm=norm, cmap=cmap), cax=axis, label='Error')
+
 
     def scatter_estimated_salinity_prior(self, axis):
         mu = self.auv_data.get_all_prior()
         m = self.auv_data.get_all_estimated_salinity()
-        k = 1000
+        k = 2000
         min_salinity = np.nanmin(m)
         max_salinity = np.nanmax(m)
         if len(mu) > k:
@@ -271,7 +300,7 @@ class PlotttingFunctions:
         measured_salinity = self.auv_data.get_all_salinity()
         min_salinity = np.nanmin(measured_salinity)
         max_salinity = np.nanmax(measured_salinity)
-        k = 1000
+        k = 2000
         if len(mu) > k:
             # Randomly select k points
             inds = np.random.choice(len(mu), k, replace=False)
@@ -283,13 +312,101 @@ class PlotttingFunctions:
         axis.plot([min_salinity,max_salinity],[min_salinity,max_salinity], c="black", linestyle="dashed")
 
 
-    def plot_true_field(self, axis ,t,random_field_function):
-        depth = 1
+    def plot_true_field(self, axis ,t,random_field_function , alpha=1):
+        depth = 0
         points, field = self.field_sinmod.get_salinity_field(depth, t)
-        field = field #+ random_field_function(points)
-        axis.scatter(points[:,0],points[:,1], c=field,vmin=self.slinity_lim_low, vmax=self.salinity_lim_high, cmap=self.cmap_salinity, label="True field")
+        field = field + random_field_function(points)
+        axis.scatter(points[:,0],points[:,1], c=field,vmin=self.slinity_lim_low, vmax=self.salinity_lim_high, cmap=self.cmap_salinity, label="True field", alpha=alpha)
 
     def plot_prior_field(self, axis):
         t = self.auv_data.get_current_time()
         points, field = self.auv_data.prior_function.get_salinity_field(1, t)
         axis.scatter(points[:,0],points[:,1], c=field,vmin=self.slinity_lim_low, vmax=self.salinity_lim_high, cmap=self.cmap_salinity, label="Prior field")
+
+    def plot_error_field(self, axis, t, random_field_function):
+        depth = 0
+        points, field = self.field_sinmod.get_salinity_field(depth, t)
+        true_field = field + random_field_function(points)
+
+        conditional_field = self.salinity_kriege_func(points)
+
+        # Check if we have too many nan values
+        if np.count_nonzero(np.isnan(conditional_field)) > 0.5*len(conditional_field):
+                self.kriege_field()
+                conditional_field = self.salinity_kriege_func(points)
+
+        error_field = conditional_field - true_field
+        axis.scatter(points[:,0],points[:,1], c=error_field,vmin=self.error_low,vmax=self.error_high ,cmap=self.cmap_error, label="Error field")
+
+
+
+
+    
+    def plot_descicion_end_point(self, axis):
+        end_point = self.descicion["end_point"]
+        axis.scatter(end_point[0],end_point[1], c="red", marker="x", label="End point")
+
+
+    def plot_descicion_score(self, axis):
+        end_points = self.descicion["end_points"]
+        scores = self.descicion["scores"]
+
+        for i in range(len(end_points)):
+
+            score_str = str(np.format_float_scientific(scores[i], unique=False, precision=2))
+            axis.text(end_points[i][0], end_points[i][1], score_str, fontsize=12,c="red")
+
+
+    def plot_descicion_paths_score_color(self, axis):
+        end_points = self.descicion["end_points"]
+        scores = self.descicion["scores"]
+        start_point = self.auv_data.get_auv_path_list()[-1]
+        
+        for i in range(len(end_points)):
+            m = 100
+            points = np.linspace(start_point,end_points[i],m)
+            axis.scatter(points[:,0],points[:,1], c=np.repeat(scores[i],m), cmap = self.cmap_score, vmin=self.score_low,
+                         vmax=self.score_high, label="Descicion path")
+            
+
+    def plot_direction_gradient_color(self, axis, direction_data):
+
+        n = direction_data["n_directions"]
+        end_points = direction_data["end_points"]
+        start_point = self.auv_data.get_auv_path_list()[-1]
+        for j in range(n):
+            G = direction_data["gradient_directions"][j]
+            S = direction_data["points_directions"][j]
+            points = np.linspace(start_point,end_points[j], len(G))
+            axis.scatter(points[:,0],points[:,1], c=np.abs(G), cmap = self.cmap_gradient, vmin=self.gradient_lim_low, vmax=self.gradient_lim_high)    
+
+
+    def plot_predicted_gradient_best_path(self, axis):
+        descicion = self.descicion
+        direction_data = self.direction_data
+        best_dir_ind = descicion["direction_ind"]
+        G = direction_data["gradient_directions"][best_dir_ind]
+        Var_G = direction_data["var_gradient_directions"][best_dir_ind]
+        
+        axis.plot(G, c="red", label="Gradient")
+        axis.plot(G+np.sqrt(Var_G)*1.960, c="red", linestyle="dashed", label="95% confidence interval")
+        axis.plot(G-np.sqrt(Var_G)*1.960, c="red", linestyle="dashed")
+
+        axis.plot([0,len(G)],[0,0], c="black", linestyle="dashed")
+
+
+    def plot_score_best_path(self, axis):
+        descicion = self.descicion
+        best_dir_ind = descicion["direction_ind"]
+        score_vec = descicion["score_vector"][best_dir_ind]
+        
+        axis.plot(score_vec, c="green", label="Score")
+        
+    def plot_score_all_paths(self, axis):
+        descicion = self.descicion
+        score_vec = descicion["score_vector"]
+        for i in range(len(score_vec)):
+            axis.plot(score_vec[i], c="green", label="Score")
+        
+
+            

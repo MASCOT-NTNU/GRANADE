@@ -3,6 +3,7 @@ from cProfile import label
 import numpy as np
 from scipy.spatial import distance_matrix
 import matplotlib.pyplot as plt
+from sklearn.linear_model import LinearRegression
 import os
 import time
 
@@ -18,7 +19,7 @@ class AUVData:
                     temporal_corrolation: bool = False,
                     tau: float = 0.4,
                     phi_d: float = 300,
-                    phi_t: float = 4800,
+                    phi_t: float = 7200,
                     sigma: float = 2,
                     sampling_speed: float = 1,
                     auv_speed: float = 1.6,
@@ -145,6 +146,10 @@ class AUVData:
         # Returns the temporal corroalation for a time t 
         return np.exp(-(t / self.phi_t)**2)
     
+    def corr(self, s1, s2, t1, t2) -> np.ndarray:
+        # Returns the correlation between two points 
+        return self.cov_distance(np.linalg.norm(s1,s2)) * self.cov_temporal(t2-t1) / self.sigma**2
+    
     @staticmethod
     def distance_matrix_one_dimension(vec_1, vec_2) -> np.ndarray:
         return distance_matrix(vec_1.reshape(-1,1), vec_2.reshape(-1,1))
@@ -165,8 +170,12 @@ class AUVData:
             return self.cov_distance(D_matrix) * self.cov_temporal(T_matrix)
         return self.cov_distance(D_matrix)
     
-    def prior_correction(self):
-        pass
+    def prior_correction(self, mu) -> np.ndarray:
+        # Uses linear regression to correct the prior
+        all_salinity = self.get_all_salinity()
+        all_prior = self.get_all_prior()
+        reg = LinearRegression().fit(all_prior.reshape(-1,1), all_salinity.reshape(-1,1))
+        return reg.predict(mu.reshape(-1,1)).reshape(-1)
 
 
 
@@ -259,16 +268,7 @@ class AUVData:
 
         start = time.time()
         n_new = len(salinity_new)
-
-        # This function adds the new datapoints and calculates
-        # - mu
-        # - Sigma
-        # - m
-        # - Psi
-        # - inv_matrix
-        # - G
-        # - Var_G
-
+       
         if self.auv_data["has_points"] == False:
             self.add_first_points(S_new, T_new, salinity_new)
         
@@ -289,6 +289,7 @@ class AUVData:
             
             
             # get the prior for the new points
+            # TODO: add prior correction
             mu_new = self.prior_function.get_salinity_S_T(S_new, T_new)
             if np.nanmin(mu_new) < 0:
                 print("Negative prior") # Remove ????
@@ -321,9 +322,6 @@ class AUVData:
             inv_matrix2 = Sigma @ inv_matrix
             m = mu + inv_matrix2 @ (salinity - mu)
             Psi = Sigma - inv_matrix2 @ Sigma
-            
-            #print("error in inversion", np.sum(np.abs(inv_matrix - inv_matrix_alt))) # REMOVE
-            #print("Number of nan in iverse alt", np.count_nonzero(np.isnan(inv_matrix_alt))) # REMOVE
 
             # Store the values
             self.auv_data["Sigma"] =  Sigma
@@ -393,10 +391,6 @@ class AUVData:
             self.all_auv_data["dPsi"] = np.concatenate((self.all_auv_data["dPsi"], np.diag(self.auv_data["Psi"])[-n_new:]))
             self.all_auv_data["dSigma"] = np.concatenate((self.all_auv_data["dSigma"], np.diag(self.auv_data["Sigma"])[-n_new:]))
 
-
-
-
-
     def down_sample_points(self):
         # This function removes half of the points in the data
         # This is done to save time
@@ -422,13 +416,6 @@ class AUVData:
         
         # Store the down sampled data
         self.auv_data = new_data
-
-
-
-
-        
-
-
         
 
     def predict_points(self, P_predict: np.ndarray, T_predict):
@@ -438,6 +425,7 @@ class AUVData:
             # If we have no measurments then we can only give the unconditional values
 
             # the prior
+            # Here we need no prior correction, because we have no data
             mu_predict = self.prior_function.get_salinity_S_T(P_predict, T_predict)
 
             # Sigma 
@@ -472,6 +460,7 @@ class AUVData:
             salinity_S = self.auv_data["salinity"]
 
             # get the prior for the new points
+            # TODO: add prior correction
             mu_predict = self.prior_function.get_salinity_S_T(P_predict, T_predict)
             
             mu_predict = mu_predict +  M @ (salinity_S  - mu_S)
@@ -505,7 +494,6 @@ class AUVData:
                     print(self.auv_data[key].shape)
                 else:
                     print("")
-
 
 
     @staticmethod
@@ -646,6 +634,7 @@ class AUVData:
         Sigma_PP = cov_matrix_large[n:(n+m),n:(n+m)]
         
         # getting the prior for the points
+        # TODO: add prior correction
         mu_P = self.prior_function.get_salinity_S_T(P_predict, T_predict)
         
         # Get the conditional 
@@ -720,9 +709,9 @@ if __name__=="__main__":
 
 
         
-    from field_SINMOD import field_SINMOD
+    from scraps.field_SINMOD import field_SINMOD
     from WGS import WGS
-    from field_operation import FieldOperation
+    from scraps.field_operation import FieldOperation
     from AUV_data import AUVData   
 
 

@@ -36,6 +36,10 @@ class Field:
         self.__line_border_shapely = LineString(self.__polygon_border)
         self.__line_obstacle_shapely = LineString(self.__polygon_obstacle)
 
+        # s5, create river outlets
+        river_outlets_lat_lon = np.array([[63.436711, 10.391483] , [63.446320, 10.417712], [63.433722, 10.376099], [63.433617, 10.365583]])
+        river_outlets_xy = np.array([WGS.latlon2xy(river_outlets_lat_lon[:, 0], river_outlets_lat_lon[:, 1])]).T
+
     def is_loc_legal(self, loc: np.ndarray) -> bool:
         """
         Check if a point is legal:

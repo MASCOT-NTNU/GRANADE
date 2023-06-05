@@ -15,7 +15,7 @@ from numpy import vectorize
 from pathlib import Path
 
 
-from src.WGS import WGS
+from WGS import WGS
 
 
 # Get the list of all files and directories

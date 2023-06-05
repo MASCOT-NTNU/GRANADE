@@ -72,6 +72,7 @@ class DescicionRule:
         descicion["end_points"] = direction_data["end_points"]
         descicion["metric"] = "top_p_improvement"
         descicion["scores"] = []
+        descicion["score_vector"] = []
         for j in range(n):
             G = direction_data["gradient_directions"][j]
             Var_G = direction_data["var_gradient_directions"][j]
@@ -87,8 +88,10 @@ class DescicionRule:
             
             k = int(p * len(expected_improvement))
             
+            descicion["score_vector"].append(expected_improvement)
             avg_improvement_dir = np.average(np.sort(expected_improvement)[-k:])
             descicion["scores"].append(avg_improvement_dir)
+            
 
             if avg_improvement_dir > average_improvement_max and np.linalg.norm(b-a) > 5:
                 best_direction_ind = j

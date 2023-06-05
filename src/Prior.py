@@ -163,7 +163,7 @@ class Prior:
         # Returns the salinity field at a specific time "t"
         # This is done by linear interpolation
 
-        time_stamps = self.sinmod_data_dict["time_stamps"]
+        time_stamps = self.sinmod_data_dict["time_stamp_s"]
     
         # Getting k
         k = 0
@@ -175,7 +175,7 @@ class Prior:
         s_k = self.sinmod_data_dict["salinity"][k, depth, :, :]
         s_kp1 = self.sinmod_data_dict["salinity"][k + 1, depth, :, :]
         
-        # Time k
+        # Time step k
         t_k = time_stamps[k] 
         t_kp1 = time_stamps[k+1]
         
@@ -295,6 +295,7 @@ class Prior:
         salinity_loc = self.get_salinity_loc_depth_t(depth, t).reshape(-1,1)
         ind_ocean = np.where((salinity_loc > 0))
         points = np.array([x[ind_ocean],y[ind_ocean]]).T
-        return points, salinity_loc[ind_ocean]
+        salinity_loc = salinity_loc[ind_ocean]
+        return points, salinity_loc
 
     
