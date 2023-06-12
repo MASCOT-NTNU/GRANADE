@@ -59,6 +59,7 @@ class DescicionRule:
         G = auv_data["G"]
         abs_G = np.abs(G)
         max_g = np.max(self.sliding_average(abs_G, 10)) 
+        print("max gradient: ", max_g) # REMOVE
         
         a = auv_data["S"][-1]
         

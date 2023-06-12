@@ -53,9 +53,9 @@ class Agent:
         self.__counter = 0
         self.max_planning_time = 3 # seconds
         self.time_planning = []
+        self.time_start = time.time()
 
-    
-        pass
+
 
 
     def run(self):
@@ -64,7 +64,6 @@ class Agent:
         # c1: start the operation from scratch.
         wp_depth = .5
         wp_start = self.planner.get_starting_waypoint()
-        wp_end = self.planner.get_end_waypoint()     # This is not something 
 
         speed = self.auv.get_speed()
         max_submerged_time = self.auv.get_max_submerged_time()
@@ -79,7 +78,18 @@ class Agent:
         t_pop_last = time.time()
         update_time = rospy.get_time()
 
-        ctd_data = []
+
+        # Setting up the data storage
+        # This is the data we are getting from the vehicle
+        position_data = []
+        salinity_data = []
+        time_data = []
+        depth_data = []
+
+
+        # Plann the first waypoint
+        
+
 
         while not rospy.is_shutdown():
             if self.auv.init:
@@ -89,11 +99,15 @@ class Agent:
                 print("counter: ", self.__counter)
 
                 # s1: append data
-                loc_auv = self.auv.get_vehicle_pos()
-                ctd_data.append([loc_auv[0], loc_auv[1], loc_auv[2], self.auv.get_salinity()])  # <--- This is where we get the data
+                loc_auv = self.auv.get_vehicle_pos() # Get the location of the vehicle
+                position_data.append([loc_auv[0], loc_auv[1]])  # <--- This is where we get the position data from the vehicle
+                depth_data.append(loc_auv[2]) # <--- This is where we get the depth data from the vehicle
+                salinity_data.append(self.auv.get_salinity()) # <--- This is where we get the salinity data from the vehicle
+                time_data.append(time.time())  # <--- This is where we get the time data from the vehicle
+        
 
 
-
+                # Check if the vehicle is waiting for a new waypoint
                 if ((self.auv.auv_handler.getState() == "waiting") and
                         (rospy.get_time() - update_time) > 5.):
                     if t_now - t_pop_last >= max_submerged_time:
@@ -101,21 +115,39 @@ class Agent:
                                                    phone_number=phone, iridium_dest=iridium)
                         t_pop_last = time.time()
 
+                    # update the points in memory
+                    self.auv_data.add_new_datapoints(np.array(position_data), np.array(time_data), np.array(salinity_data))
                     
+                    # Reset the data storage
+                    position_data = []
+                    salinity_data = []
+                    time_data = []
+                    depth_data = []
 
                     # Get the next waypoint
                     wp_next = self.plan_next_waypoint()
 
                     if self.time_planning[-1] > self.max_planning_time:
                         print("Planning took too long, will down sample the points")
+                        print("Points before: ", self.auv_data.get_number_of_points_in_memory())
                         self.auv_data.down_sample_points()
-
+                        print("Points after: ", self.auv_data.get_number_of_points_in_memory())
+                        
                     # Set the waypoint to the vehicle 
                     self.auv.auv_handler.setWaypoint(math.radians(lat), math.radians(lon), wp_depth, speed=speed)
 
 
+                    # Update the counter 
+                    print("counter: ", self.__counter)  
+                    self.__counter += 1
+                
+                self.auv.last_state = self.auv.auv_handler.getState()
 
-    def plan_next_waypoint(self) -> np.ndarray:
+
+
+
+    def plan_next_waypoint(self , a) -> np.ndarray:
+
 
         time_start = time.time()
 

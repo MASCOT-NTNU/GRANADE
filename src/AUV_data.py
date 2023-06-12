@@ -6,9 +6,16 @@ import matplotlib.pyplot as plt
 from sklearn.linear_model import LinearRegression
 import os
 import time
+import pickle
 
 # TODO:
 # add a step index list
+# Add a way to correct the salinity form the prior
+# Add a way to stroe the data, so the mission can be restarted  <--- this is mostly done
+# Add a way to use the correct corrected times for the prior
+# Add a way to resduce the number of points that are predicted
+#   Can use som linear interpolation to get the missing points
+
 
 
 
@@ -18,8 +25,8 @@ class AUVData:
                     prior_function, 
                     temporal_corrolation: bool = False,
                     tau: float = 0.4,
-                    phi_d: float = 300,
-                    phi_t: float = 7200,
+                    phi_d: float = 200,
+                    phi_t: float = 3600,
                     sigma: float = 2,
                     sampling_speed: float = 1,
                     auv_speed: float = 1.6,
@@ -50,6 +57,11 @@ class AUVData:
 
         # If we want to use temporal corrolation
         self.temporal_corrolation = temporal_corrolation
+
+
+        # For storing the data
+        self.__counter = 0
+        self.save_data_path = "src/save_counter_data/" # os.path.join(os.getcwd(), "/save_counter_data/")
 
     
     def get_sigma(self) ->  float:
@@ -137,6 +149,18 @@ class AUVData:
     
     def get_salinity_in_memory(self) -> np.ndarray:
         return self.auv_data["salinity"]
+    
+    def get_number_of_points_in_memory(self) -> int:
+        if self.auv_data["has_points"]:
+            return len(self.auv_data["salinity"])
+        else:
+            return 0
+        
+    def get_number_of_points_in_all_memory(self) -> int:
+        if self.all_auv_data["has_points"]:
+            return len(self.all_auv_data["salinity"])
+        else:
+            return 0
 
     def cov_distance(self, d) -> np.ndarray:    
         # Returns the spatial corroalation for a distance d 
@@ -337,6 +361,10 @@ class AUVData:
         # Update all data
         self.update_all_data(n_new)
 
+        # Store the data if the mission is interupted
+        self.__counter += 1
+        self.store_data()
+
 
         end = time.time()
         # Store timing
@@ -391,12 +419,14 @@ class AUVData:
             self.all_auv_data["dPsi"] = np.concatenate((self.all_auv_data["dPsi"], np.diag(self.auv_data["Psi"])[-n_new:]))
             self.all_auv_data["dSigma"] = np.concatenate((self.all_auv_data["dSigma"], np.diag(self.auv_data["Sigma"])[-n_new:]))
 
+
     def down_sample_points(self):
         # This function removes half of the points in the data
         # This is done to save time
         old_data = self.auv_data
         new_data = {}
 
+        # TODO: can add a smarter way to add these indecies
         ind = [True if i % 2 == 0 else False for i in range(len(old_data["S"]))]
         new_data["S"] = old_data["S"][ind]
         new_data["T"] = old_data["T"][ind]
@@ -416,7 +446,54 @@ class AUVData:
         
         # Store the down sampled data
         self.auv_data = new_data
+
+
+
+
+    def store_data(self):
+        # This function stores the data in a dictionary
+
+        # store the data in memory
+        with open(self.save_data_path + "auv_data_" + str(self.__counter), 'wb') as f:
+            pickle.dump(self.auv_data, f)
+
+        # Store all data        
+        with open(self.save_data_path + "all_auv_data_" + str(self.__counter), 'wb') as f:
+            pickle.dump(self.all_auv_data, f)
+
+
+
+    def load_data(self, counter: int):
+        # This function loads the data from a dictionary
+
+        # load the data from memory
+        with open(self.save_data_path + "auv_data_" + str(counter), 'rb') as f:
+            self.auv_data = pickle.load(f)
+
+        # load all data
+        with open(self.save_data_path + "all_auv_data_" + str(counter), 'rb') as f:
+            self.all_auv_data = pickle.load(f)
+
+
+    def load_most_recent_data(self):
+        # This function loads the data from a dictionary
+        dir_list = os.listdir(self.save_data_path)
+
+        ind_list = []
+        for file in dir_list:
+            if len(file)>1:
+                split_file = file.split("_")
+                if len(split_file) > 1:
+                    ind_list.append(split_file[-1])
+
+        # Find the latest index
+        latest_ind = max([int(i) for i in ind_list])
+        self.__counter = latest_ind
+        self.load_data(latest_ind)
+
         
+
+
 
     def predict_points(self, P_predict: np.ndarray, T_predict):
 
@@ -580,12 +657,8 @@ class AUVData:
                 # Predicting the transact  
                 G, Var_G, transact_points, transact_salinity = self.estimate_gradient_transact(inv_matrix, a, b, t_0)
         
-
-                # Getting the true gradient, this is not available in real life
                 # TODO: some bad names here
-                #transact, salinity_transact = get_data_transact(a,b , add_noise_position=False, add_noise_data=False)
-
-
+ 
                 # Save the data 
                 #  From prediction
                 direction_data["gradient_directions"].append(G)
@@ -594,9 +667,6 @@ class AUVData:
                 direction_data["points_directions"].append(transact_points)
                 direction_data["salinity_directions"].append(transact_salinity)
 
-                #  Data from the true field 
-                #direction_data["true_salinity_direction"].append(salinity_transact)
-                #direction_data["true_transact"].append(transact)
         
         # The number of directions used
         direction_data["n_directions"] = len(direction_data["salinity_directions"])

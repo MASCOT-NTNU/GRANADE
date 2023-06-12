@@ -68,6 +68,12 @@ time_lag = 0
 add_random_field_exp = True
 descicion_rule = "top_p_improvement"
 dashboard_type = "full"
+restart_AUV = True
+
+# Correction
+add_correction = True
+beta_0 = 4
+beta_1 = 0.9
 
 
 
@@ -492,6 +498,10 @@ for i in range(n_iterations):
     time_elapsed = AUV_data.get_time_elapsed()
     S, T, salinity = get_data_transact(a, b ,experiment_start_t + time_elapsed, sinmod_field, time_shift=time_lag, add_random_field=add_random_field_exp) 
 
+    # Add some correction to the salinty
+    if add_correction:
+        salinity = salinity * beta_1 + beta_0
+
     ## First go in a random direct
     AUV_data.add_new_datapoints(S,T - diff_time,salinity)
 
@@ -501,11 +511,24 @@ for i in range(n_iterations):
         print("Time for plotting: ", round(plotting_time, 2))
 
     if iter_speed[-1] > 5:
+        print("Iteration took more than 5 seconds")
+        print("Down sampling data")
         AUV_data.down_sample_points()
             
     
     iter_n_points.append(len(AUV_data.auv_data["S"]))
+    
+    # Randomly restart the AUV
+    if restart_AUV:
+        if np.random.uniform() < 0.1:
+            print("Restarting AUV")
 
+            print("Data in memory before reset: ", AUV_data.get_number_of_points_in_memory())
+            # Try to load the data
+            AUV_data = AUVData(sinmod_field_prior,tau=TAU,sampling_speed=SAMPLE_FREQ,auv_speed=AUV_SPEED , temporal_corrolation=True)
+            print("Data in memory after rest: ", AUV_data.get_number_of_points_in_memory())
+            AUV_data.load_most_recent_data()
+            print("Data in memory after reloading data: ", AUV_data.get_number_of_points_in_memory())
 
 
 # Making a video
