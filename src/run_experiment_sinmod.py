@@ -62,13 +62,15 @@ r = 300
 n_iterations = 200
 init_r = 70
 file_num_prior = 6
-file_num_true_field = 6
+file_num_true_field = 1
 plot_iter = True
 time_lag = 0
 add_random_field_exp = True
 descicion_rule = "top_p_improvement"
 dashboard_type = "full"
 restart_AUV = True
+max_iter_speed = 0.5
+experiment_id = "1"
 
 # Correction
 add_correction = True
@@ -253,10 +255,21 @@ for i in range(n_iterations):
         
 
     direction_data = AUV_data.predict_directions(end_points) 
-    
+
+
+    # Store the descicion data
+    # store the data in memory
+    with open("src/save_counter_data/" + "direction_data_" + str(i), 'wb') as f:
+        pickle.dump(direction_data, f)
+
     # Here we need the descicion rule
 
     descicion = des_rule.descicion_rule(direction_data, AUV_data.auv_data)
+
+    # Store the descicion data
+    with open("src/save_counter_data/" + "descicion_data_" + str(i), 'wb') as f:
+        pickle.dump(descicion, f)
+
 
     b = descicion["end_point"] 
     dist_ab = np.linalg.norm(b - a)
@@ -510,10 +523,12 @@ for i in range(n_iterations):
     if plot_iter:
         print("Time for plotting: ", round(plotting_time, 2))
 
-    if iter_speed[-1] > 5:
-        print("Iteration took more than 5 seconds")
+    if iter_speed[-1] > max_iter_speed:
+        print(f"Iteration took more than {max_iter_speed} seconds")
         print("Down sampling data")
+        print("Data in memory before down sampling: ", AUV_data.get_number_of_points_in_memory())
         AUV_data.down_sample_points()
+        print("Data in memory after down sampling: ", AUV_data.get_number_of_points_in_memory())
             
     
     iter_n_points.append(len(AUV_data.auv_data["S"]))

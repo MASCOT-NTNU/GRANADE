@@ -24,13 +24,14 @@ class AUVData:
     def __init__(self,
                     prior_function, 
                     temporal_corrolation: bool = False,
-                    tau: float = 0.4,
+                    tau: float = 0.27,
                     phi_d: float = 200,
                     phi_t: float = 3600,
                     sigma: float = 2,
                     sampling_speed: float = 1,
                     auv_speed: float = 1.6,
-                    timing: bool = True) -> None:
+                    timing: bool = True,
+                    print_while_running = True) -> None:
 
         # Parameters for the spatial corrolation 
         self.tau = tau # Measurment noits
@@ -46,6 +47,7 @@ class AUVData:
 
         # ? should this be here 
         self.prior_function = prior_function
+        self.prior_correction_function = None
 
         # AUV data
         self.auv_data = {"has_points": False}
@@ -57,6 +59,11 @@ class AUVData:
 
         # If we want to use temporal corrolation
         self.temporal_corrolation = temporal_corrolation
+
+        # if we want to print while running
+        self.print_while_running = print_while_running
+
+
 
 
         # For storing the data
@@ -161,7 +168,17 @@ class AUVData:
             return len(self.all_auv_data["salinity"])
         else:
             return 0
+    
 
+    def get_conditional_mean_variance(self):
+        return self.auv_data["m"], self.auv_data["Psi"]
+
+    def get_unconditional_mean_variance(self):
+        return self.auv_data["mu"], self.auv_data["Sigma"]
+
+    def get_gradient_variance(self):
+        return self.auv_data["G"], self.auv_data["Var_G"]
+    
     def cov_distance(self, d) -> np.ndarray:    
         # Returns the spatial corroalation for a distance d 
         return self.sigma**2 * np.exp(-(d / (2 * self.phi_d))**2)
@@ -194,12 +211,16 @@ class AUVData:
             return self.cov_distance(D_matrix) * self.cov_temporal(T_matrix)
         return self.cov_distance(D_matrix)
     
-    def prior_correction(self, mu) -> np.ndarray:
+    def make_prior_correction(self):
         # Uses linear regression to correct the prior
         all_salinity = self.get_all_salinity()
         all_prior = self.get_all_prior()
-        reg = LinearRegression().fit(all_prior.reshape(-1,1), all_salinity.reshape(-1,1))
-        return reg.predict(mu.reshape(-1,1)).reshape(-1)
+        self.prior_correction_function = LinearRegression().fit(all_prior.reshape(-1,1), all_salinity.reshape(-1,1))
+
+    
+    def prior_correction(self, mu) -> np.ndarray:
+        # Uses linear regression to correct the prior
+        return self.prior_correction_function.predict(mu.reshape(-1,1)).reshape(-1)
 
 
 
@@ -266,7 +287,8 @@ class AUVData:
         # get the prior for the new points
         mu = self.prior_function.get_salinity_S_T(S, T)
         if np.nanmin(mu) < 0:
-            print("Negative prior") # Remove ????
+            if self.print_while_running:
+                print("Negative prior") # Remove ????
         Sigma = self.make_covariance_matrix(S, T)
 
         # Gets the conditonal mean and variance
@@ -289,6 +311,9 @@ class AUVData:
 
 
     def add_new_datapoints(self, S_new,T_new, salinity_new):
+        if self.print_while_running:
+            print("Adding new datapoints", end=" ")
+            print("Number of new datapoints: ", len(salinity_new))
 
         start = time.time()
         n_new = len(salinity_new)
@@ -315,6 +340,10 @@ class AUVData:
             # get the prior for the new points
             # TODO: add prior correction
             mu_new = self.prior_function.get_salinity_S_T(S_new, T_new)
+            if self.prior_correction_function != None:
+                mu_new = self.prior_correction(mu_new)
+
+
             if np.nanmin(mu_new) < 0:
                 print("Negative prior") # Remove ????
             
@@ -341,7 +370,7 @@ class AUVData:
             Sigma_11_inv = self.auv_data["inv_matrix"]
             T_1, T_2 = np.eye(n_old) * self.tau**2, np.eye(n_new) * self.tau**2
             inv_matrix = self.inverse_matrix_block_symetric(Sigma_11 + T_1, Sigma_12, Sigma_22 + T_2, Sigma_11_inv)
-            inv_matrix_alt = inv_matrix
+            #inv_matrix_alt = inv_matrix
             #inv_matrix = np.linalg.inv(Sigma + np.eye(n+m) * self.tau**2) 
             inv_matrix2 = Sigma @ inv_matrix
             m = mu + inv_matrix2 @ (salinity - mu)
@@ -353,7 +382,7 @@ class AUVData:
             self.auv_data["m"] = m
             self.auv_data["Psi"] = Psi
             self.auv_data["inv_matrix"] = inv_matrix
-            self.auv_data["inv_matrix_alt"] = inv_matrix_alt # Remove
+            #self.auv_data["inv_matrix_alt"] = inv_matrix_alt # Remove
         
         # Based on this we estimate the gradient
         self.auv_data["G"], self.auv_data["Var_G"] = self.get_gradient(self.auv_data["m"], self.auv_data["S"], self.auv_data["Psi"])
@@ -380,6 +409,11 @@ class AUVData:
                 self.auv_data_timing[func_name]["counter"] = 1 
                 self.auv_data_timing[func_name]["total_time"] = end - start
                 self.auv_data_timing[func_name]["time_list"] = [end - start]
+
+
+        if self.print_while_running:
+            print("Done adding new datapoints", end=" ")
+            print("Time: ", end - start)
 
 
     def update_all_data(self, n_new: int):
@@ -421,6 +455,11 @@ class AUVData:
 
 
     def down_sample_points(self):
+        if self.print_while_running:
+            print("Down sampling points")
+
+
+        start = time.time()
         # This function removes half of the points in the data
         # This is done to save time
         old_data = self.auv_data
@@ -446,6 +485,29 @@ class AUVData:
         
         # Store the down sampled data
         self.auv_data = new_data
+
+        # Get the prior correction function
+        self.make_prior_correction()
+
+        end = time.time()
+
+        # Store timing
+        if self.timing: 
+            func_name = "down_sample_points"
+            if func_name in self.auv_data_timing.keys():
+                self.auv_data_timing[func_name]["counter"] += 1 
+                self.auv_data_timing[func_name]["total_time"] += end - start
+                self.auv_data_timing[func_name]["time_list"].append( end - start)
+
+            else:
+                self.auv_data_timing[func_name] = {}
+                self.auv_data_timing[func_name]["counter"] = 1 
+                self.auv_data_timing[func_name]["total_time"] = end - start
+                self.auv_data_timing[func_name]["time_list"] = [end - start]
+
+        if self.print_while_running:
+            print("Down sampling points done", end=" ")
+            print("Time: ", end - start)
 
 
 
@@ -476,6 +538,10 @@ class AUVData:
 
 
     def load_most_recent_data(self):
+        
+        if self.print_while_running:
+            print("Loading most recent data")
+
         # This function loads the data from a dictionary
         dir_list = os.listdir(self.save_data_path)
 
@@ -550,14 +616,7 @@ class AUVData:
             return mu_predict, Psi_predict, G, Var_G
 
 
-    def get_conditional_mean_variance(self):
-        return self.auv_data["m"], self.auv_data["Psi"]
 
-    def get_unconditional_mean_variance(self):
-        return self.auv_data["mu"], self.auv_data["Sigma"]
-
-    def get_gradient_variance(self):
-        return self.auv_data["G"], self.auv_data["Var_G"]
 
 
 
@@ -569,6 +628,17 @@ class AUVData:
 
                 if isinstance(self.auv_data[key], np.ndarray):
                     print(self.auv_data[key].shape)
+                else:
+                    print("")
+
+    def print_all_auv_data_shape(self):
+        if self.all_auv_data["has_points"] == True:
+
+            for key in self.all_auv_data.keys():
+                print(key ,end=" ")
+
+                if isinstance(self.all_auv_data[key], np.ndarray):
+                    print(self.all_auv_data[key].shape)
                 else:
                     print("")
 
@@ -593,12 +663,14 @@ class AUVData:
 
         # Returning the gradient
         if np.min(Var_G) < 0:
-            plt.plot(Var_G)
-            plt.show()
+            print("Var_G has negative values")
+            #plt.plot(Var_G)
+            #plt.show()
 
         if np.count_nonzero(np.isnan(Var_G)):  # Remove
-            plt.plot(Var_G)
-            plt.show(Var_G)
+            print("Var_G has nan")
+            #plt.plot(Var_G)
+            #plt.show(Var_G)
         return G, Var_G
 
 
