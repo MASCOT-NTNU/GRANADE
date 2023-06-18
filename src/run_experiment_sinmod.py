@@ -61,8 +61,8 @@ horizion =  1000
 r = 300
 n_iterations = 200
 init_r = 70
-file_num_prior = 6
-file_num_true_field = 1
+file_num_prior = 7
+file_num_true_field = 8
 plot_iter = True
 time_lag = 0
 add_random_field_exp = True
@@ -70,14 +70,35 @@ descicion_rule = "top_p_improvement"
 dashboard_type = "full"
 restart_AUV = True
 max_iter_speed = 0.5
-experiment_id = "1"
+experiment_id = "new"
+
+
+
 
 # Correction
 add_correction = True
 beta_0 = 4
 beta_1 = 0.9
 
-
+# Getting the experiment id
+if experiment_id == "new":
+    # Finding a new experiment id
+    # Read all the files in the folder 
+    files = os.listdir("src/save_counter_data/")
+    print(files)
+    # finding the file numbers
+    file_numbers = []
+    for file in files:
+        file_id = file.split("_")[-1]
+        if file_id.isdigit():
+            file_numbers.append(int(file_id))
+    print(file_numbers)
+    # Finding the lowest number that is not used
+    for i in range(len(file_numbers) + 1):
+        if i not in file_numbers:
+            experiment_id = i
+            break
+    print("Experiment id: ", experiment_id)
 
 
 
@@ -94,11 +115,21 @@ for file in dir_list:
 
 print(sinmod_files)
 
+print("using SINMOD file: ", sinmod_files[file_num_prior], " as prior")
+print("using SINMOD file: ", sinmod_files[file_num_true_field], " as true field")
+
+
 # Setting up the classes for the experiment
 sinmod_field_prior = Prior(data_path + sinmod_files[file_num_prior])
 sinmod_field = Prior(data_path + sinmod_files[file_num_true_field])
 operation_field = Field()
-AUV_data = AUVData(sinmod_field_prior,tau=TAU,sampling_speed=SAMPLE_FREQ,auv_speed=AUV_SPEED , temporal_corrolation=True)
+AUV_data = AUVData(sinmod_field_prior,
+                   tau=TAU,
+                   sampling_speed=SAMPLE_FREQ,
+                   auv_speed=AUV_SPEED,
+                    temporal_corrolation=True,
+                    experiment_id=experiment_id,
+                    reduce_points_factor=2)
 des_rule = DescicionRule(descicion_rule)
 
 # Creating the random field 
@@ -218,6 +249,10 @@ iter_n_points = []
 
 # Here is the the loop for the experiment
 for i in range(n_iterations):
+
+    print("-----------------------------------------------------")
+    print("#################   Iteration", i, "   #################")
+    print("-----------------------------------------------------")
     t_1 = time.time()
 
     a = AUV_data.auv_data["S"][-1]
@@ -259,7 +294,7 @@ for i in range(n_iterations):
 
     # Store the descicion data
     # store the data in memory
-    with open("src/save_counter_data/" + "direction_data_" + str(i), 'wb') as f:
+    with open("src/save_counter_data/" + str(experiment_id) + "/" + "direction_data_" + str(i), 'wb') as f:
         pickle.dump(direction_data, f)
 
     # Here we need the descicion rule
@@ -267,7 +302,7 @@ for i in range(n_iterations):
     descicion = des_rule.descicion_rule(direction_data, AUV_data.auv_data)
 
     # Store the descicion data
-    with open("src/save_counter_data/" + "descicion_data_" + str(i), 'wb') as f:
+    with open("src/save_counter_data/" + str(experiment_id) + "/" + "descicion_data_" + str(i), 'wb') as f:
         pickle.dump(descicion, f)
 
 
@@ -532,15 +567,24 @@ for i in range(n_iterations):
             
     
     iter_n_points.append(len(AUV_data.auv_data["S"]))
+
     
     # Randomly restart the AUV
     if restart_AUV:
         if np.random.uniform() < 0.1:
+            AUV_data.print_timing()
+
             print("Restarting AUV")
 
             print("Data in memory before reset: ", AUV_data.get_number_of_points_in_memory())
             # Try to load the data
-            AUV_data = AUVData(sinmod_field_prior,tau=TAU,sampling_speed=SAMPLE_FREQ,auv_speed=AUV_SPEED , temporal_corrolation=True)
+            AUV_data = AUVData(sinmod_field_prior,
+                   tau=TAU,
+                   sampling_speed=SAMPLE_FREQ,
+                   auv_speed=AUV_SPEED,
+                    temporal_corrolation=True,
+                    experiment_id=experiment_id,
+                    reduce_points_factor=2)
             print("Data in memory after rest: ", AUV_data.get_number_of_points_in_memory())
             AUV_data.load_most_recent_data()
             print("Data in memory after reloading data: ", AUV_data.get_number_of_points_in_memory())

@@ -18,16 +18,33 @@ from DescicionRule import DescicionRule
 
 class Agent:
 
-    def __init__(self) -> None:
+    def __init__(self,
+                 experiment_id = "new") -> None:
         """
         Setting up the agent 
         """
+
+
 
         # Thses are the parameters for the mission
         self.n_directions = 8
         self.horizion = 1000
         self.radius = 250
         self.descicion_rule = "top_p_improvement"
+        self.prior_path = "/src/sinmod_files/" + 'samples_2022.05.04.nc'
+        
+        self.salmpling_frequency = 1
+
+        # Parameters for the spatial model
+        self.tau = 0.27
+        self.phi_s = 200
+        self.phi_t = 7200
+        self.sigma = 2
+        self.auv_speed = 1.5
+        self.auv_depth = 0.5
+        self.reduce_points_factor = 1
+        self.sam
+
 
 
         # s1: AUV setup
@@ -40,8 +57,9 @@ class Agent:
         print(" Operation field is set up ")
 
         # s3: Setting up prior field and auv data
-        self.prior = Prior()
-        self.auv_data = AUVData(self.prior)
+        self.prior = Prior(self.prior_path)
+        self.auv_data = AUVData(self.prior, 
+                                experiment_id=experiment_id)
         self.desicion_rule = DescicionRule(self.descicion_rule)
 
 
@@ -100,7 +118,7 @@ class Agent:
 
                 # s1: append data
                 loc_auv = self.auv.get_vehicle_pos() # Get the location of the vehicle
-                position_data.append([loc_auv[0], loc_auv[1]])  # <--- This is where we get the position data from the vehicle
+                position_data.append([loc_auv[1], loc_auv[0]])  # <--- This is where we get the position data from the vehicle
                 depth_data.append(loc_auv[2]) # <--- This is where we get the depth data from the vehicle
                 salinity_data.append(self.auv.get_salinity()) # <--- This is where we get the salinity data from the vehicle
                 time_data.append(time.time())  # <--- This is where we get the time data from the vehicle
@@ -115,6 +133,9 @@ class Agent:
                                                    phone_number=phone, iridium_dest=iridium)
                         t_pop_last = time.time()
 
+                    # Timming the planning
+                    t_plan_start = time.time()
+
                     # update the points in memory
                     self.auv_data.add_new_datapoints(np.array(position_data), np.array(time_data), np.array(salinity_data))
                     
@@ -125,23 +146,36 @@ class Agent:
                     depth_data = []
 
                     # Get the next waypoint
-                    wp_next = self.plan_next_waypoint()
+                    wp_next = np.empty(2)
+                    if self.__counter == 0:
+                        wp_next = self.plan_first_waypoint()
+                    else:
+                        wp_next = self.plan_next_waypoint()
+
+
+                    # Going from x,y to lat,lon in the WGS84 system
+                    lat, lon = WGS.xy2latlon(wp_next[1], wp_next[0])
+
+
+                    # Set the waypoint to the vehicle 
+                    self.auv.auv_handler.setWaypoint(math.radians(lat), math.radians(lon), wp_depth, speed=speed)
+
+                    # Update the time planning
+                    self.time_planning.append(time.time() - t_plan_start)
 
                     if self.time_planning[-1] > self.max_planning_time:
                         print("Planning took too long, will down sample the points")
                         print("Points before: ", self.auv_data.get_number_of_points_in_memory())
                         self.auv_data.down_sample_points()
                         print("Points after: ", self.auv_data.get_number_of_points_in_memory())
-                        
-                    # Set the waypoint to the vehicle 
-                    self.auv.auv_handler.setWaypoint(math.radians(lat), math.radians(lon), wp_depth, speed=speed)
-
 
                     # Update the counter 
                     print("counter: ", self.__counter)  
                     self.__counter += 1
                 
                 self.auv.last_state = self.auv.auv_handler.getState()
+                self.auv_handler.spin()
+            self.rate.sleep()
 
 
 
@@ -199,6 +233,20 @@ class Agent:
         print("Planning took: ", time_end - time_start)
 
         return b
+    
+    def plan_first_waypoint(self) -> np.ndarray:
+        a = self.__loc_start
+        b = np.array([a[1] + 100 * np.cos(theta), a[0] + 100 * np.sin(theta)]).ravel()
+        while self.operation_field.is_path_legal(np.flip(a),np.flip(b)) == False: 
+            theta =  np.random.rand(1) * np.pi * 2 
+            b = np.array([a[0] + 100 * np.cos(theta), a[1] + 100 * np.sin(theta)]).ravel()
+        return b
+    
+if __name__ == "__main__":
+
+    Agent = Agent()
+    Agent.run()
+
 
 
 

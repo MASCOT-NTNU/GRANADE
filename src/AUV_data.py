@@ -12,9 +12,7 @@ import pickle
 # add a step index list
 # Add a way to correct the salinity form the prior
 # Add a way to stroe the data, so the mission can be restarted  <--- this is mostly done
-# Add a way to use the correct corrected times for the prior
-# Add a way to resduce the number of points that are predicted
-#   Can use som linear interpolation to get the missing points
+# Add a way to use the prior to correc
 
 
 
@@ -23,15 +21,17 @@ class AUVData:
 
     def __init__(self,
                     prior_function, 
-                    temporal_corrolation: bool = False,
+                    temporal_corrolation: bool = True,
                     tau: float = 0.27,
-                    phi_d: float = 200,
+                    phi_d: float = 540,
                     phi_t: float = 3600,
                     sigma: float = 2,
                     sampling_speed: float = 1,
                     auv_speed: float = 1.6,
                     timing: bool = True,
-                    print_while_running = True) -> None:
+                    print_while_running = True,
+                    experiment_id = "new",
+                    reduce_points_factor = 1) -> None:
 
         # Parameters for the spatial corrolation 
         self.tau = tau # Measurment noits
@@ -63,12 +63,23 @@ class AUVData:
         # if we want to print while running
         self.print_while_running = print_while_running
 
-
-
+        # Proportion of points added each iteration
+        self.reduce_points_factor = reduce_points_factor
+        self.reduce_points = False
+        if self.reduce_points_factor > 1:
+            self.reduce_points = True
 
         # For storing the data
         self.__counter = 0
-        self.save_data_path = "src/save_counter_data/" # os.path.join(os.getcwd(), "/save_counter_data/")
+
+        self.experiment_id = experiment_id
+        self.save_data_path = "src/save_counter_data/" + str(self.experiment_id) + "/"
+
+        # Checking if the folder exists
+        if not os.path.exists(self.save_data_path):
+            os.makedirs(self.save_data_path)
+        
+
 
     
     def get_sigma(self) ->  float:
@@ -138,7 +149,6 @@ class AUVData:
     def get_all_prior(self) -> np.ndarray:
         return self.all_auv_data["mu"]
     
-    
     def get_auv_data(self) -> dict:
         return self.auv_data
     
@@ -168,7 +178,6 @@ class AUVData:
             return len(self.all_auv_data["salinity"])
         else:
             return 0
-    
 
     def get_conditional_mean_variance(self):
         return self.auv_data["m"], self.auv_data["Psi"]
@@ -310,6 +319,34 @@ class AUVData:
         self.auv_data["has_points"] = True
 
 
+    def reduce_points_function(self, S, T, salinity):
+        n = len(salinity)
+
+        # These are the points that we want to keep
+        m = int(n / self.reduce_points_factor)
+
+        # Gettting the indices of the points that we want to keep
+        indices = np.linspace(0, n-1, m).astype(int)   
+
+        print(len(indices)) 
+        
+        # Reducing the number of points
+        S = S[indices]
+        T = T[indices]
+        #salinity = salinity[indices]
+        salinity_new = np.zeros(len(indices))
+        j = 0
+        for i in indices:
+            if i+self.reduce_points_factor > n - 1:
+                salinity_new[j] = np.mean(salinity[i:])
+            else:
+                salinity_new[j] = np.mean(salinity[i:i+self.reduce_points_factor])
+            j += 1
+        return S, T, salinity_new
+
+
+
+
     def add_new_datapoints(self, S_new,T_new, salinity_new):
         if self.print_while_running:
             print("Adding new datapoints", end=" ")
@@ -317,7 +354,15 @@ class AUVData:
 
         start = time.time()
         n_new = len(salinity_new)
-       
+
+        # If we want to reduce the number of points that we add
+        # this is done to save time 
+        if self.reduce_points:
+            S_new, T_new, salinity_new = self.reduce_points_function(S_new, T_new, salinity_new)
+            
+            if self.print_while_running:
+                print("Number of new datapoints after reduction: ", len(salinity_new))
+
         if self.auv_data["has_points"] == False:
             self.add_first_points(S_new, T_new, salinity_new)
         
@@ -412,8 +457,8 @@ class AUVData:
 
 
         if self.print_while_running:
-            print("Done adding new datapoints", end=" ")
-            print("Time: ", end - start)
+            print("Done adding new datapoints")
+            print("\t Time: ", round(end - start,3),"s")
 
 
     def update_all_data(self, n_new: int):
@@ -507,7 +552,7 @@ class AUVData:
 
         if self.print_while_running:
             print("Down sampling points done", end=" ")
-            print("Time: ", end - start)
+            print("Time for downsampling: ", round(end - start,3), " s")
 
 
 
@@ -678,7 +723,7 @@ class AUVData:
         
         dist = np.linalg.norm(b - a)
         total_time = dist / self.auv_speed
-        n_points = int(total_time * self.sampling_speed)
+        n_points = int(total_time * self.sampling_speed  / self.reduce_points_factor)
         t_end = t_0 + total_time
         
         T = np.linspace(t_0, t_end, n_points)
@@ -691,6 +736,13 @@ class AUVData:
 
 
     def predict_directions(self, endpoints):
+        if self.print_while_running:
+            print("Predicting directions")
+            print("The number of directions is: ", len(endpoints))
+
+        # Timing the function
+        start_time = time.time()
+        
     
         # The data we want to store
         direction_data = {}
@@ -742,6 +794,13 @@ class AUVData:
         
         # The number of directions used
         direction_data["n_directions"] = len(direction_data["salinity_directions"])
+
+
+        if self.print_while_running:
+            print("Done predicting directions")
+            print("\t The time used was: ", round(time.time() - start_time,3), "s")
+
+
         
         return direction_data
 
@@ -888,7 +947,7 @@ if __name__=="__main__":
 
         dist = np.linalg.norm(b - a)
         total_time = dist / AUV_SPEED
-        n_points = int(total_time * SAMPLE_FREQ)
+        n_points = int(total_time * SAMPLE_FREQ )
         t_end = t_0 + total_time
         
         T = np.linspace(t_0, t_end, n_points)
