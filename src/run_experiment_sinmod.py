@@ -53,19 +53,19 @@ SAMPLE_FREQ = 1 # Hz
 n_directions = 8
 max_points = 10000
 horizion =  1000
-r = 300
+r = 250
 n_iterations = 200
 init_r = 70
-file_num_prior = 7
-file_num_true_field = 8
+file_num_prior = 5
+file_num_true_field = 5
 plot_iter = True
-time_lag = 10**10
+time_lag = 0
 add_random_field_exp = True
 descicion_rule = "top_p_improvement"
 dashboard_type = "full"
 restart_AUV = True
 max_iter_speed = 0.5
-experiment_id = "2023.06.19.A"
+experiment_id = "new"
 reduce_points_factor = 3
 
 
@@ -126,7 +126,8 @@ AUV_data = AUVData(sinmod_field_prior,
                    auv_speed=AUV_SPEED,
                     temporal_corrolation=True,
                     experiment_id=experiment_id,
-                    reduce_points_factor=2)
+                    reduce_points_factor=reduce_points_factor,)
+AUV_data.load_most_recent_data()
 des_rule = DescicionRule(descicion_rule)
 
 # Creating the random field 
@@ -444,7 +445,7 @@ for i in range(n_iterations):
             all_salinity = AUV_data.get_all_salinity()
             all_prior = AUV_data.get_all_prior()
             reg = LinearRegression().fit(all_prior.reshape(-1,1), all_salinity.reshape(-1,1))
-            print("coeff ",reg.coef_," intercept " ,reg.intercept_)
+            print("[INFO] coeff ",reg.coef_," intercept " ,reg.intercept_)
 
         if dashboard_type == "presentation":
             time_elapsed = AUV_data.get_time_elapsed()
@@ -565,6 +566,10 @@ for i in range(n_iterations):
     
     iter_n_points.append(len(AUV_data.auv_data["S"]))
 
+    # Pring the shape of auv_data
+    if i % 2 == 0:
+        AUV_data.print_auv_data_shape()
+        AUV_data.print_all_auv_data_shape()
     
     # Randomly restart the AUV
     if restart_AUV:

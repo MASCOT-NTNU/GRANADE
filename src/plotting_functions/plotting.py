@@ -248,7 +248,7 @@ class PlotttingFunctions:
 
     def plot_prior_path(self, axis):
         T = self.auv_data.get_all_times()
-        mu = self.auv_data.get_all_prior()
+        mu = self.auv_data.get_all_prior_uncorrected()
         axis.plot(T,mu, label="Prior path", c="green", linestyle="dashed")
 
 
@@ -296,7 +296,7 @@ class PlotttingFunctions:
 
 
     def scatter_measured_salinity_prior(self, axis):
-        mu = self.auv_data.get_all_prior()
+        mu = self.auv_data.get_all_prior_uncorrected()
         measured_salinity = self.auv_data.get_all_salinity()
         min_salinity = np.nanmin(measured_salinity)
         max_salinity = np.nanmax(measured_salinity)

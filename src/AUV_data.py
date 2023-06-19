@@ -23,7 +23,7 @@ class AUVData:
                     prior_function, 
                     temporal_corrolation: bool = True,
                     tau: float = 0.27,
-                    phi_d: float = 540,
+                    phi_d: float = 250,
                     phi_t: float = 3600,
                     sigma: float = 2,
                     sampling_speed: float = 1,
@@ -50,8 +50,9 @@ class AUVData:
         self.prior_correction_function = None
 
         # AUV data
-        self.auv_data = {"has_points": False}
-        self.all_auv_data = {"has_points": False}
+        self.auv_data = {"has_points": False} # This is the working memory data
+        self.all_auv_data = {"has_points": False} # This is data from the whole mission
+        self.raw_auv_data = {"has_points": False} # This is the raw data from the AUV with the prior
 
 
 
@@ -126,7 +127,6 @@ class AUVData:
     def set_max_points(self, max_points):
         self.max_points = max_points
 
-
     def get_all_salinity(self) -> np.ndarray:
         return self.all_auv_data["salinity"]  
     
@@ -153,6 +153,9 @@ class AUVData:
     
     def get_all_prior(self) -> np.ndarray:
         return self.all_auv_data["mu"]
+    
+    def get_all_prior_uncorrected(self) -> np.ndarray:
+        return self.all_auv_data["mu_uncorrected"]
     
     def get_auv_data(self) -> dict:
         return self.auv_data
@@ -227,9 +230,13 @@ class AUVData:
     
     def make_prior_correction(self):
         # Uses linear regression to correct the prior
+        print("[ACTION] Making prior correction function")
+        start_time = time.time()
         all_salinity = self.get_all_salinity()
-        all_prior = self.get_all_prior()
+        all_prior = self.get_all_prior_uncorrected()
         self.prior_correction_function = LinearRegression().fit(all_prior.reshape(-1,1), all_salinity.reshape(-1,1))
+        print(f"[INFO] coeddicients: {self.prior_correction_function.coef_}, intercept: {self.prior_correction_function.intercept_}")
+        print("[TIMING] Time to make prior correction function: ", round(time.time() - start_time,3), " s")
 
     
     def prior_correction(self, mu) -> np.ndarray:
@@ -318,6 +325,7 @@ class AUVData:
         # Store the values
         self.auv_data["Sigma"] =  Sigma
         self.auv_data["mu"] = mu
+        self.auv_data["mu_uncorrected"] = mu
         self.auv_data["m"] = m
         self.auv_data["Psi"] = Psi
 
@@ -357,7 +365,7 @@ class AUVData:
 
     def add_new_datapoints(self, S_new,T_new, salinity_new):
         if self.print_while_running:
-            print("[ACTION] Adding new datapoints", end=" ")
+            print("[ACTION] Adding new datapoints")
             print("[INFO] Number of new datapoints: ", len(salinity_new))
 
         start = time.time()
@@ -393,6 +401,7 @@ class AUVData:
             # get the prior for the new points
             # TODO: add prior correction
             mu_new = self.prior_function.get_salinity_S_T(S_new, T_new)
+            mu_uncorrected = mu_new.copy()
             if self.prior_correction_function != None:
                 mu_new = self.prior_correction(mu_new)
 
@@ -432,6 +441,7 @@ class AUVData:
             # Store the values
             self.auv_data["Sigma"] =  Sigma
             self.auv_data["mu"] = mu
+            self.auv_data["mu_uncorrected"] = np.concatenate((self.auv_data["mu_uncorrected"], mu_uncorrected))
             self.auv_data["m"] = m
             self.auv_data["Psi"] = Psi
             self.auv_data["inv_matrix"] = inv_matrix
@@ -479,6 +489,7 @@ class AUVData:
             self.all_auv_data["T"] = self.auv_data["T"]
             self.all_auv_data["salinity"] = self.auv_data["salinity"]
             self.all_auv_data["mu"] = self.auv_data["mu"]
+            self.all_auv_data["mu_uncorrected"] = self.auv_data["mu_uncorrected"]
             self.all_auv_data["m"] = self.auv_data["m"] 
             self.all_auv_data["G"] = self.auv_data["G"]
             self.all_auv_data["Var_G"] = self.auv_data["Var_G"]
@@ -498,6 +509,7 @@ class AUVData:
             self.all_auv_data["T"] = np.concatenate((self.all_auv_data["T"], self.auv_data["T"][-n_new:]))
             self.all_auv_data["salinity"] = np.concatenate((self.all_auv_data["salinity"], self.auv_data["salinity"][-n_new:]))
             self.all_auv_data["mu"] = np.concatenate((self.all_auv_data["mu"], self.auv_data["mu"][-n_new:]))
+            self.all_auv_data["mu_uncorrected"] = np.concatenate((self.all_auv_data["mu_uncorrected"], self.auv_data["mu_uncorrected"][-n_new:]))
             self.all_auv_data["m"] = np.concatenate((self.all_auv_data["m"], self.auv_data["m"][-n_new:]))
             self.all_auv_data["G"] = np.concatenate((self.all_auv_data["G"], self.auv_data["G"][-n_new:]))
             self.all_auv_data["Var_G"] = np.concatenate((self.all_auv_data["Var_G"], self.auv_data["Var_G"][-n_new:]))
@@ -525,6 +537,7 @@ class AUVData:
         new_data["salinity"] = old_data["salinity"][ind]
         new_data["Sigma"] = old_data["Sigma"][ind][:,ind]
         new_data["mu"] = old_data["mu"][ind]
+        new_data["mu_uncorrected"] = old_data["mu_uncorrected"][ind]
         new_data["m"] = old_data["m"][ind]
         new_data["Psi"] = old_data["Psi"][ind][:,ind]
         new_data["G"] = old_data["G"][ind[0:-1]]
@@ -540,7 +553,7 @@ class AUVData:
         self.auv_data = new_data
 
         # Get the prior correction function
-        self.make_prior_correction()
+        #self.make_prior_correction() TODO: this is strange
 
         end = time.time()
 
@@ -559,7 +572,7 @@ class AUVData:
                 self.auv_data_timing[func_name]["time_list"] = [end - start]
 
         if self.print_while_running:
-            print("[ACTION] Down sampling points done", end=" ")
+            print("[ACTION] Down sampling points done")
             print("[TIMING] \t Time for downsampling: ", round(end - start,3), " s")
 
 
@@ -607,10 +620,13 @@ class AUVData:
         
         if len(ind_list) == 0:
             # If we have no data then we can just return
+            if self.print_while_running:
+                print("[ACTION] No data to load from this experiment id:", self.experiment_id)
             return
         
         if self.print_while_running:
-            print("[ACTION] Loading data from index: ", max([int(i) for i in ind_list]), end=" ")
+            print("[ACTION] Loading data from index: ", max([int(i) for i in ind_list]))
+            print("[INFO] experiment id:", self.experiment_id)
         # Find the latest index
         latest_ind = max([int(i) for i in ind_list])
         self.__counter = latest_ind
@@ -722,12 +738,12 @@ class AUVData:
 
         # Returning the gradient
         if np.min(Var_G) < 0:
-            print("Var_G has negative values")
+            print("[WARNING] Var_G has negative values")
             #plt.plot(Var_G)
             #plt.show()
 
         if np.count_nonzero(np.isnan(Var_G)):  # Remove
-            print("Var_G has nan")
+            print("[WARNING] Var_G has nan")
             #plt.plot(Var_G)
             #plt.show(Var_G)
         return G, Var_G
