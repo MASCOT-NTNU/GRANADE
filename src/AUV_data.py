@@ -53,6 +53,8 @@ class AUVData:
         self.auv_data = {"has_points": False}
         self.all_auv_data = {"has_points": False}
 
+
+
         self.timing = timing
         self.auv_data_timing = {}
         self.max_time_pr_loop = 20 # seconds
@@ -78,6 +80,9 @@ class AUVData:
         # Checking if the folder exists
         if not os.path.exists(self.save_data_path):
             os.makedirs(self.save_data_path)
+
+        # Setting up timing variables
+        self.expertiment_data_t0 = 0
         
 
 
@@ -279,6 +284,8 @@ class AUVData:
 
 
     def add_first_points(self, S, T, salinity):
+        # Update the timing 
+        self.expertiment_data_t0 = T[0]
 
         # Improve the path list
         self.auv_data["path_list"] = []
@@ -297,7 +304,7 @@ class AUVData:
         mu = self.prior_function.get_salinity_S_T(S, T)
         if np.nanmin(mu) < 0:
             if self.print_while_running:
-                print("Negative prior") # Remove ????
+                print("[WARNING] Negative prior") # Remove ????
         Sigma = self.make_covariance_matrix(S, T)
 
         # Gets the conditonal mean and variance
@@ -318,6 +325,8 @@ class AUVData:
         # Change notes so we know that we have points
         self.auv_data["has_points"] = True
 
+        
+
 
     def reduce_points_function(self, S, T, salinity):
         n = len(salinity)
@@ -328,7 +337,6 @@ class AUVData:
         # Gettting the indices of the points that we want to keep
         indices = np.linspace(0, n-1, m).astype(int)   
 
-        print(len(indices)) 
         
         # Reducing the number of points
         S = S[indices]
@@ -349,8 +357,8 @@ class AUVData:
 
     def add_new_datapoints(self, S_new,T_new, salinity_new):
         if self.print_while_running:
-            print("Adding new datapoints", end=" ")
-            print("Number of new datapoints: ", len(salinity_new))
+            print("[ACTION] Adding new datapoints", end=" ")
+            print("[INFO] Number of new datapoints: ", len(salinity_new))
 
         start = time.time()
         n_new = len(salinity_new)
@@ -361,7 +369,7 @@ class AUVData:
             S_new, T_new, salinity_new = self.reduce_points_function(S_new, T_new, salinity_new)
             
             if self.print_while_running:
-                print("Number of new datapoints after reduction: ", len(salinity_new))
+                print("[INFO] Number of new datapoints after reduction: ", len(salinity_new))
 
         if self.auv_data["has_points"] == False:
             self.add_first_points(S_new, T_new, salinity_new)
@@ -390,7 +398,7 @@ class AUVData:
 
 
             if np.nanmin(mu_new) < 0:
-                print("Negative prior") # Remove ????
+                print("[WARNING] Negative prior") # Remove ????
             
             # Update the covariance matrix, this saves some time
             n_old, n_new = len(salinity), len(salinity_new)
@@ -457,8 +465,8 @@ class AUVData:
 
 
         if self.print_while_running:
-            print("Done adding new datapoints")
-            print("\t Time: ", round(end - start,3),"s")
+            print("[ACTION] Done adding new datapoints")
+            print("[TIMING] \t Time: ", round(end - start,3),"s")
 
 
     def update_all_data(self, n_new: int):
@@ -501,7 +509,7 @@ class AUVData:
 
     def down_sample_points(self):
         if self.print_while_running:
-            print("Down sampling points")
+            print("[ACTION] Down sampling points")
 
 
         start = time.time()
@@ -551,8 +559,8 @@ class AUVData:
                 self.auv_data_timing[func_name]["time_list"] = [end - start]
 
         if self.print_while_running:
-            print("Down sampling points done", end=" ")
-            print("Time for downsampling: ", round(end - start,3), " s")
+            print("[ACTION] Down sampling points done", end=" ")
+            print("[TIMING] \t Time for downsampling: ", round(end - start,3), " s")
 
 
 
@@ -596,7 +604,13 @@ class AUVData:
                 split_file = file.split("_")
                 if len(split_file) > 1:
                     ind_list.append(split_file[-1])
-
+        
+        if len(ind_list) == 0:
+            # If we have no data then we can just return
+            return
+        
+        if self.print_while_running:
+            print("[ACTION] Loading data from index: ", max([int(i) for i in ind_list]), end=" ")
         # Find the latest index
         latest_ind = max([int(i) for i in ind_list])
         self.__counter = latest_ind
@@ -737,8 +751,8 @@ class AUVData:
 
     def predict_directions(self, endpoints):
         if self.print_while_running:
-            print("Predicting directions")
-            print("The number of directions is: ", len(endpoints))
+            print("[ACTION] Predicting directions")
+            print("[INFO] The number of directions is: ", len(endpoints))
 
         # Timing the function
         start_time = time.time()
@@ -797,8 +811,8 @@ class AUVData:
 
 
         if self.print_while_running:
-            print("Done predicting directions")
-            print("\t The time used was: ", round(time.time() - start_time,3), "s")
+            print("[ACTION] Done predicting directions")
+            print("[TIMING] \t The time used was: ", round(time.time() - start_time,3), "s")
 
 
         

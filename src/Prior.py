@@ -104,7 +104,7 @@ class Prior:
 
         # Printing loading done
         t2 = time.time()
-        print(f"== Loading SINMOD data done == t={t2-t1:,.2f} s")
+        print(f"[TIMING] Loading SINMOD data done == t={t2-t1:,.2f} s")
 
     def __make_interpolation_functions(self):
         """
@@ -228,6 +228,13 @@ class Prior:
     def get_salinity_S_T(self, S: np.ndarray, T: np.ndarray) -> np.ndarray:
         # S points in the 2d plane
         # T time stamps 
+
+        # Checking if T is inside the time stamps
+        if np.min(T) < np.min(self.sinmod_data_dict["time_stamp_s"]) or np.max(T) > np.max(self.sinmod_data_dict["time_stamp_s"]):
+            print("[WARNING] T is outside the time stamps")
+            print("[WARNING] T is clipped to the time stamps")
+            T = np.minimum(T, np.repeat(np.max(self.sinmod_data_dict["time_stamp_s"]), len(T)))
+            T = np.maximum(T, np.repeat(np.min(self.sinmod_data_dict["time_stamp_s"]), len(T)))
 
         ind_below, ind_above = self.get_time_ind_below_above_T(T)
 

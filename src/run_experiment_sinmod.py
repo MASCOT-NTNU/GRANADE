@@ -43,15 +43,10 @@ def get_points(a,b,t_0):
 #Parameters
 
 # Measurment noise
-TAU = 0.27
-
-# Model noise
-SIGMA = 2
-
-
-# AUV specifications
-AUV_SPEED = 1.6
-SAMPLE_FREQ = 1
+TAU = 0.27 # The measurment noise
+SIGMA = 2 
+AUV_SPEED = 1.6 # m/s   
+SAMPLE_FREQ = 1 # Hz
 
 
 # These are important parameters for the experiment
@@ -64,13 +59,14 @@ init_r = 70
 file_num_prior = 7
 file_num_true_field = 8
 plot_iter = True
-time_lag = 0
+time_lag = 10**10
 add_random_field_exp = True
 descicion_rule = "top_p_improvement"
 dashboard_type = "full"
 restart_AUV = True
 max_iter_speed = 0.5
-experiment_id = "new"
+experiment_id = "2023.06.19.A"
+reduce_points_factor = 3
 
 
 
@@ -79,6 +75,7 @@ experiment_id = "new"
 add_correction = True
 beta_0 = 4
 beta_1 = 0.9
+
 
 # Getting the experiment id
 if experiment_id == "new":
@@ -584,7 +581,7 @@ for i in range(n_iterations):
                    auv_speed=AUV_SPEED,
                     temporal_corrolation=True,
                     experiment_id=experiment_id,
-                    reduce_points_factor=2)
+                    reduce_points_factor=reduce_points_factor)
             print("Data in memory after rest: ", AUV_data.get_number_of_points_in_memory())
             AUV_data.load_most_recent_data()
             print("Data in memory after reloading data: ", AUV_data.get_number_of_points_in_memory())
