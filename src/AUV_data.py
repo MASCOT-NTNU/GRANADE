@@ -14,6 +14,7 @@ import datetime
 # Add a way to correct the salinity form the prior
 # Add a way to stroe the data, so the mission can be restarted  <--- this is mostly done
 # Add a way to use the prior to correc
+# Add a way to filter depth values that are wrong
 
 
 
@@ -366,7 +367,7 @@ class AUVData:
         return S, T, salinity_new
 
 
-    def filter_new_points(self, S_new, T_new, salinity_new):
+    def filter_new_points(self, S_new, T_new, salinity_new, depth_new=None):
         # Getting the distance between the points added
         dist = np.linalg.norm(S_new[1:] - S_new[:-1], axis=1)
         newest_points_dist = 0
@@ -379,7 +380,11 @@ class AUVData:
         dist = np.concatenate((np.array([newest_points_dist]), dist))
 
         # Getting the indices of the points that we want to keep
-        indices = np.where(dist > 0.1)[0]
+        indices = 0
+        if depth_new is not None:
+            indices = np.where((dist > 0.1) * (depth_new < 0.75) * (depth_new > 0.25))[0]
+        else:
+            indices = np.where(dist > 0.1)[0]
 
         return S_new[indices], T_new[indices], salinity_new[indices]
         
@@ -387,7 +392,7 @@ class AUVData:
 
 
 
-    def add_new_datapoints(self, S_new,T_new, salinity_new):
+    def add_new_datapoints(self, S_new,T_new, salinity_new, depth_new=None):
         if self.print_while_running:
             print("[ACTION] Adding new datapoints")
             print("[INFO] Number of new datapoints: ", len(salinity_new))
@@ -396,7 +401,7 @@ class AUVData:
         n_new = len(salinity_new)
 
         # Filter the new datapoints
-        S_new, T_new, salinity_new = self.filter_new_points(S_new, T_new, salinity_new)
+        S_new, T_new, salinity_new = self.filter_new_points(S_new, T_new, salinity_new, depth_new)
         if self.print_while_running:
            print("[INFO] Number of new datapoints after filtering: ", len(salinity_new)) 
 

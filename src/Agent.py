@@ -5,6 +5,7 @@ import time
 import math 
 import rospy
 import datetime
+import pickle
 
 from AUV import AUV
 from WGS import WGS
@@ -35,7 +36,7 @@ class Agent:
         self.radius_init = 150 # meters, how far the agent will move on the first iteration
         self.descicion_rule_str = "top_p_improvement"
         self.prior_path = os.getcwd() + "/src/sinmod_files/" + sinmod_file_name + ".nc"
-        #self.prior_path = "/src/sinmod_files/" + sinmod_file_name
+        self.start_from_current_location = True
 
         # Tide data 
         self.prior_date = datetime.datetime(2022,6,21)            # SET EVERY MISSION
@@ -49,13 +50,14 @@ class Agent:
         print("[INFO] Time <now> in prior time: ", datetime.datetime.fromtimestamp(time.time() - self.diff_time_s))
         print("[NOTE] Check that this seems reasonable, if it is wrong make a correction in the code")
         self.salmpling_frequency = 1
+        self.max_planning_time = 3 # seconds
 
         # Parameters for the spatial model
         self.tau = 0.27 # The measurment noise
         self.phi_d = 530 # The spatial correlation length
         self.phi_t = 7200 # The temporal correlation length
         self.sigma = 2
-        self.auv_speed = 1.5  # [m/s] The auv speed
+        self.auv_speed = 1.6  # [m/s] The auv speed
         self.auv_depth = 0.5 # The depth layer the auv will be operating in
         self.reduce_points_factor = 2 # The factor to reduce the number of points added at each iteration
                                       # if factor is 1, no points will be removed
@@ -118,10 +120,9 @@ class Agent:
 
         # s4: storing variables
         self.__counter = 0
-        self.max_planning_time = 3 # seconds
         self.time_planning = []
         self.time_start = time.time()
-        self.start_from_current_location = True
+     
 
 
         print("[ACTION] Agent is set up")
@@ -337,6 +338,13 @@ class Agent:
         # Finding which direction is the best
         descicion = self.descicion_rule.descicion_rule(direction_data, self.auv_data.auv_data)
 
+        # Store the direction data
+        with open("src/save_counter_data/" + str(self.experiment_id) + "/" + "direction_data_" + str(self.__counter), 'wb') as f:
+            pickle.dump(direction_data, f)
+        # Store the descicion data
+        with open("src/save_counter_data/" + str(self.experiment_id) + "/" + "descicion_data_" + str(self.__counter), 'wb') as f:
+            pickle.dump(descicion, f)
+
         b = descicion["end_point"] 
         dist_ab = np.linalg.norm(b - a)
         b = a + (b - a) / dist_ab  * min(dist_ab, self.radius)
@@ -363,9 +371,51 @@ class Agent:
             b = np.array([a[0] + self.radius_init * np.cos(theta), a[1] + self.radius_init * np.sin(theta)]).ravel()
         return b
     
+    def save_parameters(self):
+        
+        parameter_dict = {}
+        parameter_dict["radius"] = self.radius
+        parameter_dict["radius_init"] = self.radius_init
+        parameter_dict["horizion"] = self.horizion
+        parameter_dict["n_directions"] = self.n_directions
+        parameter_dict["descicion_rule"] = self.descicion_rule_str
+        parameter_dict["prior_path"] = self.prior_path
+        parameter_dict["date_today"] = self.date_today
+        parameter_dict["prior_date"] = self.prior_date
+        parameter_dict["high_tide_prior"] = self.high_tide_prior
+        parameter_dict["high_tide_today"] = self.high_tide_today
+        parameter_dict["tau"] = self.tau
+        parameter_dict["pid_d"] = self.pid_d
+        parameter_dict["phi_t"] = self.phi_t
+        parameter_dict["sigma"] = self.sigma
+        parameter_dict["auv_speed"] = self.auv_speed
+        parameter_dict["auv_depth"] = self.auv_depth
+        parameter_dict["reduce_points_factor"] = self.reduce_points_factor
+        parameter_dict["max_planning_time"] = self.max_planning_time
+
+        # The path we want to save the data to       
+        path = "src/save_counter_data/" + str(self.experiment_id) + "/"
+
+        # Checking if the folder exists
+        if not os.path.exists(path):
+            os.makedirs(path)
+
+        print("[ACTION] Saving the parmeters")
+
+        # Saving the data
+        with open(path + "parameters", 'wb') as f:
+            pickle.dump(parameter_dict, f)
+
+
+
+
+
+        
+    
 if __name__ == "__main__":
 
-    Agent = Agent()
+    experiment_id = "new"
+    Agent = Agent(experiment_id=experiment_id)
     Agent.run()
 
 
