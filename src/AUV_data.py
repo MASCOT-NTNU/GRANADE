@@ -7,6 +7,7 @@ from sklearn.linear_model import LinearRegression
 import os
 import time
 import pickle
+import datetime
 
 # TODO:
 # add a step index list
@@ -51,6 +52,9 @@ class AUVData:
         self.prior_correction_function = None
         self.time_diff_prior = time_diff_prior
 
+        if time_diff_prior != 0:
+            print("[INFO] [AUV_data] prior time:", datetime.datetime.fromtimestamp(time.time() - time_diff_prior))
+
         # AUV data
         self.auv_data = {"has_points": False} # This is the working memory data
         self.all_auv_data = {"has_points": False} # This is data from the whole mission
@@ -86,7 +90,6 @@ class AUVData:
 
         # Setting up timing variables
         self.expertiment_data_t0 = 0
-        
 
 
     
@@ -166,7 +169,7 @@ class AUVData:
         return self.auv_data["path_list"]    
     
     def get_prior_salinity_field(self, t) -> np.ndarray:
-        return self.prior_function.get_salinity_field(0, t)
+        return self.prior_function.get_salinity_field(0, t - self.time_diff_prior)
     
     def get_current_time(self) -> float:
         return self.auv_data["T"][-1]
@@ -310,7 +313,7 @@ class AUVData:
 
 
         # get the prior for the new points
-        mu = self.prior_function.get_salinity_S_T(S, T)
+        mu = self.prior_function.get_salinity_S_T(S, T - self.time_diff_prior)
         if np.nanmin(mu) < 0:
             if self.print_while_running:
                 print("[WARNING] Negative prior") # Remove ????
@@ -363,6 +366,25 @@ class AUVData:
         return S, T, salinity_new
 
 
+    def filter_new_points(self, S_new, T_new, salinity_new):
+        # Getting the distance between the points added
+        dist = np.linalg.norm(S_new[1:] - S_new[:-1], axis=1)
+        newest_points_dist = 0
+        if self.auv_data["has_points"]:
+            newest_point = self.get_points_in_memory()[-1]
+            newest_points_dist = np.linalg.norm(newest_point - S_new[0])
+        else: 
+            newest_points_dist = 1
+        
+        dist = np.concatenate((np.array([newest_points_dist]), dist))
+
+        # Getting the indices of the points that we want to keep
+        indices = np.where(dist > 0.1)[0]
+
+        return S_new[indices], T_new[indices], salinity_new[indices]
+        
+        
+
 
 
     def add_new_datapoints(self, S_new,T_new, salinity_new):
@@ -373,6 +395,12 @@ class AUVData:
         start = time.time()
         n_new = len(salinity_new)
 
+        # Filter the new datapoints
+        S_new, T_new, salinity_new = self.filter_new_points(S_new, T_new, salinity_new)
+        if self.print_while_running:
+           print("[INFO] Number of new datapoints after filtering: ", len(salinity_new)) 
+
+ 
         # If we want to reduce the number of points that we add
         # this is done to save time 
         if self.reduce_points:
@@ -681,7 +709,7 @@ class AUVData:
 
             # get the prior for the new points
             # TODO: add prior correction
-            mu_predict = self.prior_function.get_salinity_S_T(P_predict, T_predict)
+            mu_predict = self.prior_function.get_salinity_S_T(P_predict, T_predict - self.time_diff_prior)
             
             mu_predict = mu_predict +  M @ (salinity_S  - mu_S)
             Psi_predict = cov_ss - M @ cov_sy
@@ -868,7 +896,7 @@ class AUVData:
         
         # getting the prior for the points
         # TODO: add prior correction
-        mu_P = self.prior_function.get_salinity_S_T(P_predict, T_predict)
+        mu_P = self.prior_function.get_salinity_S_T(P_predict, T_predict - self.time_diff_prior)
         
         # Get the conditional 
         M = np.transpose(Sigma_SP) @ inv_matrix

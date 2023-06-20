@@ -231,10 +231,13 @@ class Prior:
 
         # Checking if T is inside the time stamps
         if np.min(T) < np.min(self.sinmod_data_dict["time_stamp_s"]) or np.max(T) > np.max(self.sinmod_data_dict["time_stamp_s"]):
-            print("[WARNING] T is outside the time stamps")
-            print("[WARNING] T is clipped to the time stamps")
-            T = np.minimum(T, np.repeat(np.max(self.sinmod_data_dict["time_stamp_s"]), len(T)))
-            T = np.maximum(T, np.repeat(np.min(self.sinmod_data_dict["time_stamp_s"]), len(T)))
+            print("[WARNING] T is outside the time stamps, T is clipped to the time stamps")
+            print("[INFO] min time prior", datetime.datetime.fromtimestamp(self.sinmod_data_dict["time_stamp_s"][0]))
+            print("[INFO] max time prior", datetime.datetime.fromtimestamp(self.sinmod_data_dict["time_stamp_s"][-1]))
+            print("[INFO] min time", datetime.datetime.fromtimestamp(np.min(T)))
+            print("[INFO] max time", datetime.datetime.fromtimestamp(np.max(T)))
+            T = np.minimum(T, np.repeat(np.max(self.sinmod_data_dict["time_stamp_s"] - 5), len(T)))
+            T = np.maximum(T, np.repeat(np.min(self.sinmod_data_dict["time_stamp_s"] + 5), len(T)))
 
         ind_below, ind_above = self.get_time_ind_below_above_T(T)
 

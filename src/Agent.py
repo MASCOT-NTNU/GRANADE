@@ -33,7 +33,7 @@ class Agent:
         self.horizion = 1000  # meters, how far the agent can see
         self.radius = 250 # meters, how far the agent will move 
         self.radius_init = 150 # meters, how far the agent will move on the first iteration
-        self.descicion_rule = "top_p_improvement"
+        self.descicion_rule_str = "top_p_improvement"
         self.prior_path = os.getcwd() + "/src/sinmod_files/" + sinmod_file_name + ".nc"
         #self.prior_path = "/src/sinmod_files/" + sinmod_file_name
 
@@ -46,9 +46,8 @@ class Agent:
         self.diff_date_s = int((self.date_today - self.prior_date).total_seconds())
         self.diff_tide_time = int((self.high_tide_today - self.high_tide_prior).total_seconds() - self.diff_date_s)
         self.diff_time_s = int((self.high_tide_today - self.high_tide_prior).total_seconds()) + correction
-        print("[INFO] Time <now> in prior time: ", datetime.datetime.fromtimestamp(datetime.datetime.now().timestamp() - self.diff_time_s))
+        print("[INFO] Time <now> in prior time: ", datetime.datetime.fromtimestamp(time.time() - self.diff_time_s))
         print("[NOTE] Check that this seems reasonable, if it is wrong make a correction in the code")
-        
         self.salmpling_frequency = 1
 
         # Parameters for the spatial model
@@ -77,8 +76,32 @@ class Agent:
         print("[ACTION] Operation field is set up ")
 
         # s3: Setting up prior field and auv data
+
+        # Getting the experiment id
+        if experiment_id == "new":
+            # Finding a new experiment id
+            # Read all the files in the folder 
+            files = os.listdir("src/save_counter_data/")
+            print("[INFO] expermimenets in memory")
+            # finding the file numbers
+            file_numbers = []
+            for file in files:
+                file_id = file.split("_")[-1]
+                if file_id.isdigit():
+                    file_numbers.append(int(file_id))
+            #print(file_numbers)
+            # Finding the lowest number that is not used
+            for i in range(len(file_numbers) + 1):
+                if i not in file_numbers:
+                    experiment_id = i
+                    break
+            print("[INFO] Experiment id: ", experiment_id)
+        print("[ACTION] Setting up prior")
+        print("[INFO] Prior path: ", sinmod_file_name)
         self.prior = Prior(self.prior_path)
         print("[ACTION] Prior is set up")
+        print("[INFO] First timestep in prior: ", datetime.datetime.fromtimestamp(self.prior.get_time_steps_seconds()[0]))
+        print("[INFO] Last timestep in prior: ",datetime.datetime.fromtimestamp(self.prior.get_time_steps_seconds()[-1]))
         print("[ACTION] Setting up data handler")
         self.auv_data = AUVData(self.prior, 
                                 phi_d=self.phi_d,
@@ -87,7 +110,7 @@ class Agent:
                                 experiment_id=experiment_id,
                                 time_diff_prior=self.diff_time_s)
         self.auv_data.load_most_recent_data() # This will load the most recent data if it exists
-        self.desicion_rule = DescicionRule(self.descicion_rule)
+        self.descicion_rule = DescicionRule(self.descicion_rule_str)
 
         #
 
@@ -98,6 +121,7 @@ class Agent:
         self.max_planning_time = 3 # seconds
         self.time_planning = []
         self.time_start = time.time()
+        self.start_from_current_location = True
 
 
         print("[ACTION] Agent is set up")
@@ -122,7 +146,14 @@ class Agent:
         lat, lon = WGS.xy2latlon(wp_start[1], wp_start[0])
         print("[ACTION] sending starting waypoint to auv")
         print("[INFO] lat: ",lat, " lon: ", lon)
-        self.auv.auv_handler.setWaypoint(math.radians(lat), math.radians(lon), wp_depth, speed=speed)
+        if self.start_from_current_location:
+            
+            current_position = self.auv.get_vehicle_pos()
+            lat, lon = WGS.xy2latlon(current_position[0], current_position[1])
+            self.auv.auv_handler.setWaypoint(math.radians(lat), math.radians(lon), wp_depth, speed=speed)
+        else:
+            self.auv.auv_handler.setWaypoint(math.radians(lat), math.radians(lon), wp_depth, speed=speed)
+        print("[INFO] lat: ",lat, " lon: ", lon)
         print("[INFO] waypoint sent to auv")
 
         t_pop_last = time.time()
@@ -138,6 +169,7 @@ class Agent:
 
 
         # Plann the first waypoint
+        wp_next = np.empty(2)
         
 
 
@@ -146,11 +178,14 @@ class Agent:
 
                 t_now = time.time()
 
-                print("counter: ", self.__counter, " vehicle state: ", self.auv.auv_handler.getState())
+                print("counter: ", self.__counter, "\t vehicle state: ", self.auv.auv_handler.getState() ,end=" ")
+                print(" \t time now: ", datetime.datetime.now(), end=" ")
+                print(" \t prior time: ", datetime.datetime.fromtimestamp(time.time() - self.diff_time_s))
+
 
                 # s1: append data
                 loc_auv = self.auv.get_vehicle_pos() # Get the location of the vehicle
-                position_data.append([loc_auv[1], loc_auv[0]])  # <--- This is where we get the position data from the vehicle
+                position_data.append([loc_auv[1], loc_auv[0]])  # <--x- This is where we get the position data from the vehicle
                 depth_data.append(loc_auv[2]) # <--- This is where we get the depth data from the vehicle
                 salinity_data.append(self.auv.get_salinity()) # <--- This is where we get the salinity data from the vehicle
                 time_data.append(time.time())  # <--- This is where we get the time data from the vehicle
@@ -172,15 +207,19 @@ class Agent:
                     # Timming the planning
                     t_plan_start = time.time()
 
-                    # update the points in memory
-                    print("S," , position_data)
-                    print("T," , time_data)
-                    print("D," , depth_data)
-                    print("Salinity," , salinity_data)
+                   
 
-                    S_lat_lon = np.array(position_data)
-                    S_xy = WGS.xy2latlon(position_data[:,1], position_data[:,0])
-                    self.auv_data.add_new_datapoints(S_xy, np.array(time_data), np.array(salinity_data))
+                    # Checking if the points are legal
+                    illigal_points = []
+                    for s in position_data:
+                        if not self.operation_field.is_loc_legal(np.flip(np.array(s))):
+                            illigal_points.append(s)
+                    if len(illigal_points) > 0:
+                        print("[WARNING] illigal points found")
+                        print("[INFO] there are" , len(illigal_points), "illigal points out of", len(position_data))
+
+                     # update the points in memory
+                    self.auv_data.add_new_datapoints(np.array(position_data), np.array(time_data), np.array(salinity_data))
                     
                     # Reset the data storage
                     position_data = []
@@ -189,11 +228,10 @@ class Agent:
                     depth_data = []
 
                     # Get the next waypoint
-                    wp_next = np.empty(2)
                     if self.__counter == 0:
                         wp_next = self.plan_first_waypoint()
                     else:
-                        wp_next = self.plan_next_waypoint()
+                        wp_next = self.plan_next_waypoint(wp_next)
 
 
                     # Going from x,y to lat,lon in the WGS84 system
@@ -217,7 +255,7 @@ class Agent:
 
                     # Update the counter 
                     print("-----------------------------------------------------")
-                    print("#################   Counter", self.__counter, "   #################")
+                    print("#################   Counter", self.__counter + 1, "   #################")
                     print("-----------------------------------------------------")
                     self.__counter += 1
                 
@@ -230,6 +268,9 @@ class Agent:
 
     def plan_next_waypoint(self , a) -> np.ndarray:
 
+        # a is the current waypoint in x, y
+        # b is the next waypoint in x, y
+
 
         time_start = time.time()
 
@@ -238,7 +279,7 @@ class Agent:
         for theta in directions:
             b = np.array([a[0] + self.horizion * np.cos(theta), a[1] + self.horizion * np.sin(theta)]).ravel()   
 
-            a_prev = self.AUV_data.auv_data["path_list"][-2]
+            a_prev = self.auv_data.auv_data["path_list"][-2]
 
 
             u = b - a
@@ -269,7 +310,7 @@ class Agent:
             for theta in directions:
                 b = np.array([a[0] + self.horizion * np.cos(theta), a[1] + self.horizion * np.sin(theta)]).ravel()   
 
-                a_prev = self.AUV_data.auv_data["path_list"][-2]
+                a_prev = self.auv_data.auv_data["path_list"][-2]
                 u = b - a
                 v = a_prev - a
                 c = np.dot(u,v)/np.linalg.norm(u)/np.linalg.norm(v) # -> cosine of the angle
@@ -291,10 +332,10 @@ class Agent:
 
 
         # Getting the direction data
-        direction_data = self.AUV_data.predict_directions(end_points) 
+        direction_data = self.auv_data.predict_directions(end_points) 
 
         # Finding which direction is the best
-        descicion = self.descicion_rule.descicion_rule(direction_data, self.AUV_data.auv_data)
+        descicion = self.descicion_rule.descicion_rule(direction_data, self.auv_data.auv_data)
 
         b = descicion["end_point"] 
         dist_ab = np.linalg.norm(b - a)
@@ -302,19 +343,21 @@ class Agent:
 
         descicion["end_point"] = b
 
-        curr_time = self.AUV_data.auv_data["T"][-1]
+        curr_time = self.auv_data.auv_data["T"][-1]
 
         time_end = time.time()
 
         self.time_planning.append(time_end - time_start)
         print("[TIMING] \t Planning took: ", time_end - time_start)
-
         return b
     
     def plan_first_waypoint(self) -> np.ndarray:
-        a = self.__loc_start
+        loc_start = self.__loc_start
+        a = np.array([loc_start[1], loc_start[0]]).ravel()
         theta =  np.random.rand(1) * np.pi * 2 
-        b = np.array([a[1] + self.radius_init * np.cos(theta), a[0] + self.radius_init * np.sin(theta)]).ravel()
+        b = np.array([a[0] + self.radius_init * np.cos(theta), a[1] + self.radius_init * np.sin(theta)]).ravel()
+        print("a", a)
+        print("b", b)
         while self.operation_field.is_path_legal(np.flip(a),np.flip(b)) == False: 
             theta =  np.random.rand(1) * np.pi * 2 
             b = np.array([a[0] + self.radius_init * np.cos(theta), a[1] + self.radius_init * np.sin(theta)]).ravel()
