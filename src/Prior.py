@@ -48,7 +48,7 @@ class Prior:
         t1 = time.time()  #REMOVE
         self.interpolation_functions = self.__make_interpolation_functions()
         t2 = time.time()  #REMOVE
-        print(f"== Create interpolate functions == t={t2-t1:,.2f} s")  #REMOVE
+        print(f"[TIMING] == Create interpolate functions == t={t2-t1:,.2f} s")  #REMOVE
 
 
     def __load_sinmod_data(self) -> None:

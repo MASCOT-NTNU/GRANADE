@@ -4,6 +4,7 @@ import os
 import time 
 import math 
 import rospy
+import datetime
 
 from AUV import AUV
 from WGS import WGS
@@ -19,7 +20,8 @@ from DescicionRule import DescicionRule
 class Agent:
 
     def __init__(self,
-                 experiment_id = "new") -> None:
+                 experiment_id = "new",
+                 sinmod_file_name = "samples_2022.06.21") -> None:
         """
         Setting up the agent 
         """
@@ -31,7 +33,18 @@ class Agent:
         self.radius = 250 # meters, how far the agent will move 
         self.radius_init = 150 # meters, how far the agent will move on the first iteration
         self.descicion_rule = "top_p_improvement"
-        self.prior_path = "/src/sinmod_files/" + 'samples_2022.05.04.nc'
+        self.prior_path = "/src/sinmod_files/" + sinmod_file_name
+
+        # Tide data 
+        self.prior_date = datetime.datetime(2022,6,21)            # SET EVERY MISSION
+        self.date_today = datetime.datetime(2023,6,20)            # SET EVERY MISSION
+        self.high_tide_prior = datetime.datetime(2022,6,21,5,30)  # SET EVERY MISSION
+        self.high_tide_today = datetime.datetime(2022,6,21,5,30)  # SET EVERY MISSION
+        self.diff_date_s = int((self.date_today - self.prior_date).total_seconds())
+        self.diff_tide_time = int((self.high_tide_today - self.high_tide_prior).total_seconds() - self.diff_date_s)
+        self.diff_time_s = int((self.high_tide_today - self.high_tide_prior).total_seconds())
+        print("[INFO] Time <now> in prior time: ", datetime.datetime.fromtimestamp(datetime.datetime.now().timestamp() - self.diff_time_s))
+        print("[NOTE] Check that this seems reasonable")
         
         self.salmpling_frequency = 1
 
@@ -68,9 +81,12 @@ class Agent:
                                 phi_d=self.phi_s,
                                 phi_t=self.phi_t,
                                 tau=self.tau,
-                                experiment_id=experiment_id)
+                                experiment_id=experiment_id,
+                                time_diff_prior=self.diff_time_s)
         self.auv_data.load_most_recent_data() # This will load the most recent data if it exists
         self.desicion_rule = DescicionRule(self.descicion_rule)
+
+        #
 
 
 
@@ -240,8 +256,6 @@ class Agent:
                 b = np.array([a[0] + self.horizion * np.cos(theta), a[1] + self.horizion * np.sin(theta)]).ravel()   
 
                 a_prev = self.AUV_data.auv_data["path_list"][-2]
-
-
                 u = b - a
                 v = a_prev - a
                 c = np.dot(u,v)/np.linalg.norm(u)/np.linalg.norm(v) # -> cosine of the angle

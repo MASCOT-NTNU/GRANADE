@@ -17,3 +17,4 @@ vendor
 *.nc
 **/sinmod
 */sinmod
+*/save_counter_data

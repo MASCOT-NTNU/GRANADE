@@ -31,7 +31,8 @@ class AUVData:
                     timing: bool = True,
                     print_while_running = True,
                     experiment_id = "new",
-                    reduce_points_factor = 1) -> None:
+                    reduce_points_factor = 1,
+                    time_diff_prior = 0) -> None:
 
         # Parameters for the spatial corrolation 
         self.tau = tau # Measurment noits
@@ -48,6 +49,7 @@ class AUVData:
         # ? should this be here 
         self.prior_function = prior_function
         self.prior_correction_function = None
+        self.time_diff_prior = time_diff_prior
 
         # AUV data
         self.auv_data = {"has_points": False} # This is the working memory data
@@ -400,7 +402,7 @@ class AUVData:
             
             # get the prior for the new points
             # TODO: add prior correction
-            mu_new = self.prior_function.get_salinity_S_T(S_new, T_new)
+            mu_new = self.prior_function.get_salinity_S_T(S_new, T_new - self.time_diff_prior)
             mu_uncorrected = mu_new.copy()
             if self.prior_correction_function != None:
                 mu_new = self.prior_correction(mu_new)
@@ -644,7 +646,7 @@ class AUVData:
 
             # the prior
             # Here we need no prior correction, because we have no data
-            mu_predict = self.prior_function.get_salinity_S_T(P_predict, T_predict)
+            mu_predict = self.prior_function.get_salinity_S_T(P_predict, T_predict - self.time_diff_prior)
 
             # Sigma 
             Sigma_PP = self.make_covariance_matrix(P_predict, T_predict)
