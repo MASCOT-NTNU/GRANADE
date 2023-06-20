@@ -28,23 +28,26 @@ class Agent:
         print("[ACTION] Setting up the agent")
 
         # Thses are the parameters for the mission
+        self.wp_start =  np.array([1800, 3000])
         self.n_directions = 8
         self.horizion = 1000  # meters, how far the agent can see
         self.radius = 250 # meters, how far the agent will move 
         self.radius_init = 150 # meters, how far the agent will move on the first iteration
         self.descicion_rule = "top_p_improvement"
-        self.prior_path = "/src/sinmod_files/" + sinmod_file_name
+        self.prior_path = os.getcwd() + "/src/sinmod_files/" + sinmod_file_name + ".nc"
+        #self.prior_path = "/src/sinmod_files/" + sinmod_file_name
 
         # Tide data 
         self.prior_date = datetime.datetime(2022,6,21)            # SET EVERY MISSION
         self.date_today = datetime.datetime(2023,6,20)            # SET EVERY MISSION
         self.high_tide_prior = datetime.datetime(2022,6,21,5,30)  # SET EVERY MISSION
-        self.high_tide_today = datetime.datetime(2022,6,21,5,30)  # SET EVERY MISSION
+        self.high_tide_today = datetime.datetime(2023,6,20,1,40)  # SET EVERY MISSION
+        correction = 0
         self.diff_date_s = int((self.date_today - self.prior_date).total_seconds())
         self.diff_tide_time = int((self.high_tide_today - self.high_tide_prior).total_seconds() - self.diff_date_s)
-        self.diff_time_s = int((self.high_tide_today - self.high_tide_prior).total_seconds())
+        self.diff_time_s = int((self.high_tide_today - self.high_tide_prior).total_seconds()) + correction
         print("[INFO] Time <now> in prior time: ", datetime.datetime.fromtimestamp(datetime.datetime.now().timestamp() - self.diff_time_s))
-        print("[NOTE] Check that this seems reasonable")
+        print("[NOTE] Check that this seems reasonable, if it is wrong make a correction in the code")
         
         self.salmpling_frequency = 1
 
@@ -78,7 +81,7 @@ class Agent:
         print("[ACTION] Prior is set up")
         print("[ACTION] Setting up data handler")
         self.auv_data = AUVData(self.prior, 
-                                phi_d=self.phi_s,
+                                phi_d=self.phi_d,
                                 phi_t=self.phi_t,
                                 tau=self.tau,
                                 experiment_id=experiment_id,
@@ -96,6 +99,7 @@ class Agent:
         self.time_planning = []
         self.time_start = time.time()
 
+
         print("[ACTION] Agent is set up")
 
 
@@ -106,17 +110,20 @@ class Agent:
         
         # c1: start the operation from scratch.
         wp_depth = .5
-        wp_start = self.planner.get_starting_waypoint()
+        wp_start = self.wp_start
 
         speed = self.auv.get_speed()
-        max_submerged_time = self.auv.get_max_submerged_time()
-        popup_time = self.auv.get_min_popup_time()
+        max_submerged_time = self.auv.get_submerged_time()
+        popup_time = self.auv.get_popup_time()
         phone = self.auv.get_phone_number()
         iridium = self.auv.get_iridium()
 
         # a1: move to current location
-        lat, lon = WGS.xy2latlon(wp_start[0], wp_start[1])
+        lat, lon = WGS.xy2latlon(wp_start[1], wp_start[0])
+        print("[ACTION] sending starting waypoint to auv")
+        print("[INFO] lat: ",lat, " lon: ", lon)
         self.auv.auv_handler.setWaypoint(math.radians(lat), math.radians(lon), wp_depth, speed=speed)
+        print("[INFO] waypoint sent to auv")
 
         t_pop_last = time.time()
         update_time = rospy.get_time()
@@ -139,7 +146,7 @@ class Agent:
 
                 t_now = time.time()
 
-                print("counter: ", self.__counter)
+                print("counter: ", self.__counter, " vehicle state: ", self.auv.auv_handler.getState())
 
                 # s1: append data
                 loc_auv = self.auv.get_vehicle_pos() # Get the location of the vehicle
@@ -166,7 +173,14 @@ class Agent:
                     t_plan_start = time.time()
 
                     # update the points in memory
-                    self.auv_data.add_new_datapoints(np.array(position_data), np.array(time_data), np.array(salinity_data))
+                    print("S," , position_data)
+                    print("T," , time_data)
+                    print("D," , depth_data)
+                    print("Salinity," , salinity_data)
+
+                    S_lat_lon = np.array(position_data)
+                    S_xy = WGS.xy2latlon(position_data[:,1], position_data[:,0])
+                    self.auv_data.add_new_datapoints(S_xy, np.array(time_data), np.array(salinity_data))
                     
                     # Reset the data storage
                     position_data = []
@@ -208,8 +222,8 @@ class Agent:
                     self.__counter += 1
                 
                 self.auv.last_state = self.auv.auv_handler.getState()
-                self.auv_handler.spin()
-            self.rate.sleep()
+                self.auv.auv_handler.spin()
+            self.auv.rate.sleep()
 
 
 
@@ -299,6 +313,7 @@ class Agent:
     
     def plan_first_waypoint(self) -> np.ndarray:
         a = self.__loc_start
+        theta =  np.random.rand(1) * np.pi * 2 
         b = np.array([a[1] + self.radius_init * np.cos(theta), a[0] + self.radius_init * np.sin(theta)]).ravel()
         while self.operation_field.is_path_legal(np.flip(a),np.flip(b)) == False: 
             theta =  np.random.rand(1) * np.pi * 2 

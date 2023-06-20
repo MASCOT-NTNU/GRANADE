@@ -128,8 +128,26 @@ class Field:
         intersect_points_border = self.__line_border_shapely.intersection(line)
         intersect_points_obstacle = self.__line_obstacle_shapely.intersection(line)
 
-        intersect_points_border_np = np.array(intersect_points_border)
-        intersect_points_obstacle_np = np.array(intersect_points_obstacle)
+        # Turn the points into numpy arrays
+        if intersect_points_border.geom_type == 'Point':
+            intersect_points_border_np = np.array([[intersect_points_border.x, intersect_points_border.y]])
+        elif intersect_points_border.geom_type == 'MultiPoint':
+            intersect_points_border_np = np.array([[e.x, e.y] for e in intersect_points_border.geoms])
+        else:
+            intersect_points_border_np = np.array([])
+
+        if intersect_points_obstacle.geom_type == 'Point':
+            intersect_points_obstacle_np = np.array([[intersect_points_obstacle.x, intersect_points_obstacle.y]])
+        elif intersect_points_obstacle.geom_type == 'MultiPoint':
+            intersect_points_obstacle_np = np.array([[e.x, e.y] for e in intersect_points_obstacle.geoms])
+        else:
+            intersect_points_obstacle_np = np.array([])
+
+        #print("intersect border", intersect_points_border_np) #REMOVE
+        #print("intersect obstacle", intersect_points_obstacle_np) #REMOVE
+        
+
+
 
         m = len(intersect_points_border_np.reshape(-1,1))/2 + len(intersect_points_obstacle_np.reshape(-1,1))/2
         intersect_points = np.empty((int(m),2))
@@ -156,6 +174,7 @@ class Field:
                     intersect_points[k] = p
                     k += 1
 
+        #print("intersect points", intersect_points) #REMOVE
         return np.array(intersect_points)
     
     def get_polygon_border(self) -> np.ndarray:
@@ -203,3 +222,67 @@ class Field:
 
 if __name__ == "__main__":
     f = Field()
+
+    n = 200
+    random_x = np.random.uniform(-2500, 2000, size = n)
+    random_y = np.random.uniform(1000, 5000, size = n)
+    random_points = np.array([random_y,random_x]).T
+    for s in random_points:
+        if f.is_loc_legal(s):
+            plt.scatter(s[1],s[0], c="green")
+        else:
+            plt.scatter(s[1],s[0], c="red")
+        
+
+    f.plot_operational_area()
+    
+    n = 20
+    random_x = np.random.uniform(-2500, 2000, size = n)
+    random_y = np.random.uniform(1000, 5000, size = n)
+    random_points_A = np.array([random_y,random_x]).T
+
+    random_x = np.random.uniform(-2500, 2000, size = n)
+    random_y = np.random.uniform(1000, 5000, size = n)
+    random_points_B = np.array([random_y,random_x]).T
+    for i in range(n):
+        loc_stat = random_points_A[i]
+        loc_end = random_points_B[i]
+        if f.is_path_legal(loc_stat, loc_end):
+            plt.plot([loc_stat[1], loc_end[1]],[loc_stat[0], loc_end[0]], c="green")
+        else:
+            #intersect_points = f.__get_path_intersect(loc_stat, loc_end)
+            closest_points = f.get_closest_intersect_point(loc_stat, loc_end)
+            
+            plt.plot([loc_stat[1], loc_end[1]],[loc_stat[0], loc_end[0]], c="red")
+            plt.scatter(loc_stat[1], loc_stat[0], c="brown")
+            #plt.scatter(intersect_points[:,1], intersect_points[:,0], c="black")
+            plt.scatter(closest_points[1], closest_points[0], c="blue")
+        
+    plt.legend()
+    f.plot_operational_area()
+
+
+    n = 20
+    random_x = np.random.uniform(-2500, 2000, size = n)
+    random_y = np.random.uniform(1000, 5000, size = n)
+    random_points_A = np.array([random_y,random_x]).T
+
+    random_x = np.random.uniform(-2500, 2000, size = n)
+    random_y = np.random.uniform(1000, 5000, size = n)
+    random_points_B = np.array([random_y,random_x]).T
+    for i in range(n):
+        loc_stat = random_points_A[i]
+        loc_end = random_points_B[i]
+        if f.is_path_legal(loc_stat, loc_end):
+            plt.plot([loc_stat[1], loc_end[1]],[loc_stat[0], loc_end[0]], c="green")
+        else:
+            intersect_points = f.__get_path_intersect(loc_stat, loc_end)
+            #closest_points = f.get_closest_intersect_points(loc_stat, loc_end)
+            
+            plt.plot([loc_stat[1], loc_end[1]],[loc_stat[0], loc_end[0]], c="red")
+            plt.scatter(loc_stat[1], loc_stat[0], c="brown")
+            plt.scatter(intersect_points[:,1], intersect_points[:,0], c="black")
+            #plt.scatter(closest_points[1], closest_points[0], c="blue")
+        
+
+    f.plot_operational_area()
