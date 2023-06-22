@@ -12,11 +12,11 @@ from imc_ros_interface.msg import Temperature, Salinity, EstimatedState, Sms
 class AUV:
 
     __speed = 1.5  # [m/s]
-    __depth = .5
+    __depth = 1    # [m]
     __max_submerged_time = 600  # sec can be submerged.
     __min_popup_time = 90  # sec to be on the surface.
     __phone_number = "+4740040327"
-    __iridium_destination = "manta-1"
+    __iridium_destination = "manta-ntnu-1"
     __currentSalinity = .0
     __vehicle_pos = [0, 0, 0]
 

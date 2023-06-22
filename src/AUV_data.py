@@ -15,7 +15,11 @@ import datetime
 # Add a way to stroe the data, so the mission can be restarted  <--- this is mostly done
 # Add a way to use the prior to correc
 # Add a way to filter depth values that are wrong
-
+# Add a way to filter salinity values that are 0
+# Add a way to store depth data
+# Add what to do if we add only one point in the start, this affects the gradiet <--- This is done
+# here we want to add a dummy point, that has 0 gradient     <--- This is done
+# Add a max number of points to be added each iteration
 
 
 
@@ -304,6 +308,13 @@ class AUVData:
         self.auv_data["path_list"] = []
         self.auv_data["path_list"].append(S[0])
         self.auv_data["path_list"].append(S[-1])
+
+        if len(T) == 1:
+            # Then we will add a fake point with same salinity, but a little bit later
+            T = np.array(T[0], T[0] + 0.5)
+            S = S + np.random.normal(0,0.1,2)
+            salinity = np.array(salinity[0], salinity[0])
+            # Thus there will be a zero gradient between the two points
         
 
         # Add the datapoints 
@@ -344,6 +355,10 @@ class AUVData:
 
     def reduce_points_function(self, S, T, salinity):
         n = len(salinity)
+        if n < 2 * self.reduce_points_factor:
+            print("[INFO] not enough points to reduce")
+            return S, T, salinity
+        
 
         # These are the points that we want to keep
         m = int(n / self.reduce_points_factor)
@@ -382,9 +397,9 @@ class AUVData:
         # Getting the indices of the points that we want to keep
         indices = 0
         if depth_new is not None:
-            indices = np.where((dist > 0.1) * (depth_new < 0.75) * (depth_new > 0.25))[0]
+            indices = np.where((dist > 0.1) * (depth_new < 0.8) * (depth_new > 0.20))[0]
         else:
-            indices = np.where(dist > 0.1)[0]
+            indices = np.where((dist > 0.1) * (salinity_new > 5))[0]
 
         return S_new[indices], T_new[indices], salinity_new[indices]
         
@@ -636,6 +651,11 @@ class AUVData:
         # load all data
         with open(self.save_data_path + "all_auv_data_" + str(counter), 'rb') as f:
             self.all_auv_data = pickle.load(f)
+
+    def load_from_dict(self, all_data_dict, auv_data_dict):
+        # This function loads the data from a dictionary
+        self.all_auv_data = all_data_dict
+        self.auv_data = auv_data_dict
 
 
     def load_most_recent_data(self):

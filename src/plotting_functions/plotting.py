@@ -238,6 +238,7 @@ class PlotttingFunctions:
         m = self.auv_data.get_all_estimated_salinity()
         Var_m = self.auv_data.get_all_salinity_variance()
         axis.plot(T,m, label="Estimated salinity", c="red")
+        axis.set_ylim([self.slinity_lim_low, self.salinity_lim_high])
         axis.fill_between(T, m- np.sqrt(Var_m)*1.960 , m+np.sqrt(Var_m)*1.960, alpha=0.2, color="red", label="95% confidence interval")
 
     def plot_measured_salinity(self, axis):

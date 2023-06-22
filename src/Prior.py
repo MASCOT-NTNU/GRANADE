@@ -13,7 +13,7 @@ import numpy as np
 import time
 from pathlib import Path
 from scipy import interpolate
-from datetime import datetime
+import datetime
 
 
 
@@ -95,8 +95,20 @@ class Prior:
         this_date = self.sinmod_data_dict["timestamp"].units.split(" ")[2]
         time_day_start = self.sinmod_data_dict["timestamp"].units.split(" ")[3]
 
+        # Getting the date for the start in int values
+        year = int(this_date.split("-")[0])
+        month = int(this_date.split("-")[1])
+        day = int(this_date.split("-")[2])
+
+        minutes = int(time_day_start.split(":")[0])
+        seconds = int(time_day_start.split(":")[1])
+
+
+
         datetime_str = this_date + " " + time_day_start
-        datetime_seconds = datetime.fromisoformat(datetime_str)
+        #datetime_seconds = datetime.datetime.fromisoformat(datetime_str)
+        datetime_seconds = datetime.datetime(year,month,day, minutes, seconds)
+
         self.start_time_s = datetime_seconds
         # This is the time in seconds since 1970
         self.sinmod_data_dict["time_stamp_s"] = datetime_seconds.timestamp() + self.sinmod_data_dict["time_stamps"]  * 24 * 60 * 60
@@ -308,4 +320,7 @@ class Prior:
         salinity_loc = salinity_loc[ind_ocean]
         return points, salinity_loc
 
+
+if __name__ == "__main__":
+    p = Prior("src/sinmod_files/" +'samples_2022.05.04.nc')
     

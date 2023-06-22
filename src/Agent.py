@@ -29,7 +29,7 @@ class Agent:
         print("[ACTION] Setting up the agent")
 
         # Thses are the parameters for the mission
-        self.wp_start =  np.array([1800, 3000])
+        self.wp_start =  np.array([700, 2800])
         self.n_directions = 8
         self.horizion = 1000  # meters, how far the agent can see
         self.radius = 250 # meters, how far the agent will move 
@@ -40,22 +40,18 @@ class Agent:
 
         # Tide data 
         self.prior_date = datetime.datetime(2022,6,21)            # SET EVERY MISSION
-        self.date_today = datetime.datetime(2023,6,20)            # SET EVERY MISSION
+        self.date_today = datetime.datetime(2023,6,22)            # SET EVERY MISSION
         self.high_tide_prior = datetime.datetime(2022,6,21,5,30)  # SET EVERY MISSION
-        self.high_tide_today = datetime.datetime(2023,6,20,1,40)  # SET EVERY MISSION
-        correction = 0
-        self.diff_date_s = int((self.date_today - self.prior_date).total_seconds())
-        self.diff_tide_time = int((self.high_tide_today - self.high_tide_prior).total_seconds() - self.diff_date_s)
-        self.diff_time_s = int((self.high_tide_today - self.high_tide_prior).total_seconds()) + correction
-        print("[INFO] Time <now> in prior time: ", datetime.datetime.fromtimestamp(time.time() - self.diff_time_s))
-        print("[NOTE] Check that this seems reasonable, if it is wrong make a correction in the code")
+        self.high_tide_today = datetime.datetime(2023,6,22,2,50)  # SET EVERY MISSION
+        self.time_correction = 0
         self.salmpling_frequency = 1
-        self.max_planning_time = 3 # seconds
+        self.max_planning_time = 5 # seconds
+        self.num_steps = 20 # The number of steps the agent will take
 
         # Parameters for the spatial model
         self.tau = 0.27 # The measurment noise
         self.phi_d = 530 # The spatial correlation length
-        self.phi_t = 7200 # The temporal correlation length
+        self.phi_t = 5400 # The temporal correlation length
         self.sigma = 2
         self.auv_speed = 1.6  # [m/s] The auv speed
         self.auv_depth = 0.5 # The depth layer the auv will be operating in
@@ -65,19 +61,20 @@ class Agent:
                                       # if factor is 3, 2/3 of the points will be removed                                      
         
         
+        self.diff_date_s = int((self.date_today - self.prior_date).total_seconds())
+        self.diff_tide_time = int((self.high_tide_today - self.high_tide_prior).total_seconds() - self.diff_date_s)
+        self.diff_time_s = int((self.high_tide_today - self.high_tide_prior).total_seconds()) + self.time_correction
+        print("[INFO] Time <now> in prior time: ", datetime.datetime.fromtimestamp(time.time() - self.diff_time_s))
+        print("[NOTE] Check that this seems reasonable, if it is wrong make a correction in the code")
 
 
+       
 
-        # s1: AUV setup
-        self.auv = AUV()
-        self.__loc_start = np.array(self.auv.get_vehicle_pos())
-        print("[ACTION] Agent is set up")
-
-        # s2: Operation field setup
+        # s1: Operation field setup
         self.operation_field = Field()
         print("[ACTION] Operation field is set up ")
 
-        # s3: Setting up prior field and auv data
+        # s2: Setting up prior field and auv data
 
         # Getting the experiment id
         if experiment_id == "new":
@@ -98,6 +95,7 @@ class Agent:
                     experiment_id = i
                     break
             print("[INFO] Experiment id: ", experiment_id)
+        self.experiment_id = experiment_id
         print("[ACTION] Setting up prior")
         print("[INFO] Prior path: ", sinmod_file_name)
         self.prior = Prior(self.prior_path)
@@ -110,18 +108,26 @@ class Agent:
                                 phi_t=self.phi_t,
                                 tau=self.tau,
                                 experiment_id=experiment_id,
-                                time_diff_prior=self.diff_time_s)
+                                time_diff_prior=self.diff_time_s,
+                                reduce_points_factor=self.reduce_points_factor)
         self.auv_data.load_most_recent_data() # This will load the most recent data if it exists
         self.descicion_rule = DescicionRule(self.descicion_rule_str)
 
-        #
+        # Storing parameters
+        print("[ACTION] Storing parameters")
+        self.save_parameters()
 
 
 
-        # s4: storing variables
+        # s3: storing variables
         self.__counter = 0
         self.time_planning = []
         self.time_start = time.time()
+
+        # s4: AUV setup
+        self.auv = AUV()
+        self.__loc_start = np.array(self.auv.get_vehicle_pos())
+        print("[ACTION] Agent is set up")
      
 
 
@@ -219,8 +225,11 @@ class Agent:
                         print("[WARNING] illigal points found")
                         print("[INFO] there are" , len(illigal_points), "illigal points out of", len(position_data))
 
-                     # update the points in memory
-                    self.auv_data.add_new_datapoints(np.array(position_data), np.array(time_data), np.array(salinity_data))
+                    # update the points in memory
+                    if len(time_data) > 0:
+                        self.auv_data.add_new_datapoints(np.array(position_data), np.array(time_data), np.array(salinity_data))
+                    else:
+                        print("[WARNING] no new data points to add")
                     
                     # Reset the data storage
                     position_data = []
@@ -262,6 +271,12 @@ class Agent:
                 
                 self.auv.last_state = self.auv.auv_handler.getState()
                 self.auv.auv_handler.spin()
+
+                if self.__counter == self.num_steps:
+                    print("Mission complete!")
+                    rospy.signal_shutdown("done")
+                    
+                    break
             self.auv.rate.sleep()
 
 
@@ -365,10 +380,15 @@ class Agent:
         theta =  np.random.rand(1) * np.pi * 2 
         b = np.array([a[0] + self.radius_init * np.cos(theta), a[1] + self.radius_init * np.sin(theta)]).ravel()
         print("a", a)
-        print("b", b)
+        counter = 0 
+        r = self.radius_init
         while self.operation_field.is_path_legal(np.flip(a),np.flip(b)) == False: 
             theta =  np.random.rand(1) * np.pi * 2 
-            b = np.array([a[0] + self.radius_init * np.cos(theta), a[1] + self.radius_init * np.sin(theta)]).ravel()
+            b = np.array([a[0] + self.r * np.cos(theta), a[1] + self.r * np.sin(theta)]).ravel()
+            counter += 1
+            if counter > 20:
+                r = np.random.rand(1) * 300
+        print("b", b)
         return b
     
     def save_parameters(self):
@@ -385,13 +405,14 @@ class Agent:
         parameter_dict["high_tide_prior"] = self.high_tide_prior
         parameter_dict["high_tide_today"] = self.high_tide_today
         parameter_dict["tau"] = self.tau
-        parameter_dict["pid_d"] = self.pid_d
+        parameter_dict["phi_d"] = self.phi_d
         parameter_dict["phi_t"] = self.phi_t
         parameter_dict["sigma"] = self.sigma
         parameter_dict["auv_speed"] = self.auv_speed
         parameter_dict["auv_depth"] = self.auv_depth
         parameter_dict["reduce_points_factor"] = self.reduce_points_factor
         parameter_dict["max_planning_time"] = self.max_planning_time
+        parameter_dict["time_correction"] = self.time_correction
 
         # The path we want to save the data to       
         path = "src/save_counter_data/" + str(self.experiment_id) + "/"

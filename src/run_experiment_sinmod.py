@@ -54,7 +54,7 @@ n_directions = 8
 max_points = 10000
 horizion =  1000
 r = 250
-n_iterations = 200
+n_iterations = 60
 init_r = 70
 file_num_prior = 8
 file_num_true_field = 8
@@ -73,7 +73,7 @@ reduce_points_factor = 3
 
 # Correction
 add_correction = True
-beta_0 = 4
+beta_0 = 5
 beta_1 = 0.9
 
 
@@ -222,7 +222,7 @@ while operation_field.is_loc_legal(np.flip(start)) == False:
     start_y = np.random.uniform(1000, 5000)
     start = np.array([start_x, start_y])
 
-start = np.array([1800, 3000])
+start = np.array([700, 2800])
 a = start
 theta =  np.random.rand(1) * np.pi * 2 
 
@@ -282,6 +282,31 @@ for i in range(n_iterations):
 
                 if dist_ab > r:
                     end_points.append(closest_legal_point)
+
+    if len(end_points) == 0:
+        print("[WARNING] No legal points found, will try again ")
+        b = np.array([a[0] + horizion * np.cos(theta), a[1] + horizion * np.sin(theta)]).ravel()   
+
+        a_prev = AUV_data.auv_data["path_list"][-2]
+
+
+        u = b - a
+        v = a_prev - a
+        c = np.dot(u,v)/np.linalg.norm(u)/np.linalg.norm(v) # -> cosine of the angle
+        angle = np.arccos(np.clip(c, -1, 1)) # if you really want the angle
+
+
+        if operation_field.is_path_legal(np.flip(a),np.flip(b)):
+            end_points.append(b)
+            #plt.plot([a[0], b[0]],[a[1], b[1]], c="green")
+        else:
+            closest_legal_point = np.flip(operation_field.  get_closest_intersect_point(np.flip(a),np.flip(b)))
+            
+            dist_ab = np.linalg.norm(closest_legal_point - a)
+
+            if dist_ab > r:
+                end_points.append(closest_legal_point)
+
 
     path_list = np.array(AUV_data.auv_data["path_list"]) 
    

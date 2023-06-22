@@ -1,0 +1,1880 @@
+['.DS_Store', '9', '0', '11', '7', '6', '1', '10', '8', '4', '3', '2', '5']
+[9, 0, 11, 7, 6, 1, 10, 8, 4, 3, 2, 5]
+Experiment id:  12
+['samples_2022.05.10.nc', 'samples_2021.05.29.nc', 'samples_2022.05.04.nc', 'samples_2022.05.11.nc', 'samples_2021.05.28.nc', 'samples_2021.05.27.nc', 'samples_2021.05.26.nc', 'samples_2022.06.21.nc', 'samples_2022.06.22.nc']
+using SINMOD file:  samples_2022.06.22.nc  as prior
+using SINMOD file:  samples_2022.06.22.nc  as true field
+[TIMING] Loading SINMOD data done == t=0.46 s
+[TIMING] == Create interpolate functions == t=2.78 s
+[TIMING] Loading SINMOD data done == t=0.36 s
+[TIMING] == Create interpolate functions == t=2.72 s
+Loading most recent data
+[ACTION] No data to load from this experiment id: 12
+covariance_matrix (4000, 4000)
+field_points (4000, 2)
+== Time to create random field == 0.9893949031829834
+[1783.82847117 3068.10639952]
+[ACTION] Adding new datapoints
+[INFO] Number of new datapoints:  43
+[INFO] Number of new datapoints after filtering:  43
+[INFO] Number of new datapoints after reduction:  14
+[ACTION] Done adding new datapoints
+[TIMING] 	 Time:  0.051 s
+-----------------------------------------------------
+#################   Iteration 0    #################
+-----------------------------------------------------
+[ACTION] Predicting directions
+[INFO] The number of directions is:  5
+[ACTION] Done predicting directions
+[TIMING] 	 The time used was:  0.05 s
+[INFO] max gradient:  0.002
+[INFO] coeff  [[0.45136361]]  intercept  [13.63949849]
+[ACTION] Adding new datapoints
+[INFO] Number of new datapoints:  156
+[INFO] Number of new datapoints after filtering:  155
+[INFO] Number of new datapoints after reduction:  51
+[ACTION] Done adding new datapoints
+[TIMING] 	 Time:  0.003 s
+0  Time for iteration:  0.06
+Time for plotting:  3.51
+has_points 
+path_list 
+S (65, 2)
+T (65,)
+salinity (65,)
+used_points (65,)
+inv_matrix (65, 65)
+inv_matrix_alt (14, 14)
+Sigma (65, 65)
+mu (65,)
+mu_uncorrected (65,)
+m (65,)
+Psi (65, 65)
+G (64,)
+Var_G (64,)
+has_points 
+S (65, 2)
+T (65,)
+salinity (65,)
+mu (65,)
+mu_uncorrected (65,)
+m (65,)
+G (64,)
+Var_G (64,)
+dPsi (65,)
+dSigma (65,)
+-----------------------------------------------------
+#################   Iteration 1    #################
+-----------------------------------------------------
+[ACTION] Predicting directions
+[INFO] The number of directions is:  6
+[ACTION] Done predicting directions
+[TIMING] 	 The time used was:  0.032 s
+[INFO] max gradient:  0.018
+[INFO] coeff  [[1.77301859]]  intercept  [-19.79549414]
+[ACTION] Adding new datapoints
+[INFO] Number of new datapoints:  156
+[INFO] Number of new datapoints after filtering:  156
+[INFO] Number of new datapoints after reduction:  52
+[ACTION] Done adding new datapoints
+[TIMING] 	 Time:  0.026 s
+1  Time for iteration:  0.07
+Time for plotting:  3.48
+-----------------------------------------------------
+#################   Iteration 2    #################
+-----------------------------------------------------
+[ACTION] Predicting directions
+[INFO] The number of directions is:  8
+[ACTION] Done predicting directions
+[TIMING] 	 The time used was:  0.051 s
+[INFO] max gradient:  0.016
+[INFO] coeff  [[1.34811238]]  intercept  [-8.43436991]
+[ACTION] Adding new datapoints
+[INFO] Number of new datapoints:  156
+[INFO] Number of new datapoints after filtering:  155
+[INFO] Number of new datapoints after reduction:  51
+[ACTION] Done adding new datapoints
+[TIMING] 	 Time:  0.026 s
+2  Time for iteration:  0.08
+Time for plotting:  3.68
+has_points 
+path_list 
+S (168, 2)
+T (168,)
+salinity (168,)
+used_points (168,)
+inv_matrix (168, 168)
+inv_matrix_alt (14, 14)
+Sigma (168, 168)
+mu (168,)
+mu_uncorrected (168,)
+m (168,)
+Psi (168, 168)
+G (167,)
+Var_G (167,)
+has_points 
+S (168, 2)
+T (168,)
+salinity (168,)
+mu (168,)
+mu_uncorrected (168,)
+m (168,)
+G (167,)
+Var_G (167,)
+dPsi (168,)
+dSigma (168,)
+Function:  add_new_datapoints
+total calls:  4  s
+Total time:  0.11  s
+Function:  estimate_gradient_transact
+total calls:  19  s
+Total time:  0.13  s
+Restarting AUV
+Data in memory before reset:  168
+Data in memory after rest:  0
+Loading most recent data
+[ACTION] Loading data from index:  4
+[INFO] experiment id: 12
+Data in memory after reloading data:  168
+-----------------------------------------------------
+#################   Iteration 3    #################
+-----------------------------------------------------
+[ACTION] Predicting directions
+[INFO] The number of directions is:  7
+[ACTION] Done predicting directions
+[TIMING] 	 The time used was:  0.049 s
+[INFO] max gradient:  0.016
+[INFO] coeff  [[1.00734828]]  intercept  [0.61939433]
+[ACTION] Adding new datapoints
+[INFO] Number of new datapoints:  156
+[INFO] Number of new datapoints after filtering:  156
+[INFO] Number of new datapoints after reduction:  52
+[ACTION] Done adding new datapoints
+[TIMING] 	 Time:  0.009 s
+3  Time for iteration:  0.09
+Time for plotting:  3.39
+-----------------------------------------------------
+#################   Iteration 4    #################
+-----------------------------------------------------
+[ACTION] Predicting directions
+[INFO] The number of directions is:  5
+[ACTION] Done predicting directions
+[TIMING] 	 The time used was:  0.071 s
+[INFO] max gradient:  0.016
+[INFO] coeff  [[0.92683502]]  intercept  [2.72151062]
+[ACTION] Adding new datapoints
+[INFO] Number of new datapoints:  156
+[INFO] Number of new datapoints after filtering:  156
+[INFO] Number of new datapoints after reduction:  52
+[ACTION] Done adding new datapoints
+[TIMING] 	 Time:  0.026 s
+4  Time for iteration:  0.1
+Time for plotting:  3.54
+has_points 
+path_list 
+S (272, 2)
+T (272,)
+salinity (272,)
+used_points (272,)
+inv_matrix (272, 272)
+inv_matrix_alt (14, 14)
+Sigma (272, 272)
+mu (272,)
+mu_uncorrected (272,)
+m (272,)
+Psi (272, 272)
+G (271,)
+Var_G (271,)
+has_points 
+S (272, 2)
+T (272,)
+salinity (272,)
+mu (272,)
+mu_uncorrected (272,)
+m (272,)
+G (271,)
+Var_G (271,)
+dPsi (272,)
+dSigma (272,)
+-----------------------------------------------------
+#################   Iteration 5    #################
+-----------------------------------------------------
+[ACTION] Predicting directions
+[INFO] The number of directions is:  5
+[ACTION] Done predicting directions
+[TIMING] 	 The time used was:  0.04 s
+[INFO] max gradient:  0.016
+[INFO] coeff  [[0.87907163]]  intercept  [3.96978549]
+[ACTION] Adding new datapoints
+[INFO] Number of new datapoints:  156
+[INFO] Number of new datapoints after filtering:  156
+[INFO] Number of new datapoints after reduction:  52
+[ACTION] Done adding new datapoints
+[TIMING] 	 Time:  0.029 s
+5  Time for iteration:  0.08
+Time for plotting:  3.66
+-----------------------------------------------------
+#################   Iteration 6    #################
+-----------------------------------------------------
+[ACTION] Predicting directions
+[INFO] The number of directions is:  6
+[ACTION] Done predicting directions
+[TIMING] 	 The time used was:  0.09 s
+[INFO] max gradient:  0.023
+[INFO] coeff  [[0.90066002]]  intercept  [3.5365577]
+[ACTION] Adding new datapoints
+[INFO] Number of new datapoints:  156
+[INFO] Number of new datapoints after filtering:  156
+[INFO] Number of new datapoints after reduction:  52
+[ACTION] Done adding new datapoints
+[TIMING] 	 Time:  0.027 s
+6  Time for iteration:  0.14
+Time for plotting:  3.53
+has_points 
+path_list 
+S (376, 2)
+T (376,)
+salinity (376,)
+used_points (376,)
+inv_matrix (376, 376)
+inv_matrix_alt (14, 14)
+Sigma (376, 376)
+mu (376,)
+mu_uncorrected (376,)
+m (376,)
+Psi (376, 376)
+G (375,)
+Var_G (375,)
+has_points 
+S (376, 2)
+T (376,)
+salinity (376,)
+mu (376,)
+mu_uncorrected (376,)
+m (376,)
+G (375,)
+Var_G (375,)
+dPsi (376,)
+dSigma (376,)
+-----------------------------------------------------
+#################   Iteration 7    #################
+-----------------------------------------------------
+[ACTION] Predicting directions
+[INFO] The number of directions is:  8
+[ACTION] Done predicting directions
+[TIMING] 	 The time used was:  0.099 s
+[INFO] max gradient:  0.024
+[INFO] coeff  [[0.94815895]]  intercept  [2.45553135]
+[ACTION] Adding new datapoints
+[INFO] Number of new datapoints:  156
+[INFO] Number of new datapoints after filtering:  156
+[INFO] Number of new datapoints after reduction:  52
+[ACTION] Done adding new datapoints
+[TIMING] 	 Time:  0.024 s
+7  Time for iteration:  0.16
+Time for plotting:  3.89
+-----------------------------------------------------
+#################   Iteration 8    #################
+-----------------------------------------------------
+[ACTION] Predicting directions
+[INFO] The number of directions is:  7
+[ACTION] Done predicting directions
+[TIMING] 	 The time used was:  0.11 s
+[INFO] max gradient:  0.024
+[INFO] coeff  [[0.9742448]]  intercept  [1.87882071]
+[ACTION] Adding new datapoints
+[INFO] Number of new datapoints:  156
+[INFO] Number of new datapoints after filtering:  156
+[INFO] Number of new datapoints after reduction:  52
+[ACTION] Done adding new datapoints
+[TIMING] 	 Time:  0.03 s
+8  Time for iteration:  0.15
+Time for plotting:  3.75
+has_points 
+path_list 
+S (480, 2)
+T (480,)
+salinity (480,)
+used_points (480,)
+inv_matrix (480, 480)
+inv_matrix_alt (14, 14)
+Sigma (480, 480)
+mu (480,)
+mu_uncorrected (480,)
+m (480,)
+Psi (480, 480)
+G (479,)
+Var_G (479,)
+has_points 
+S (480, 2)
+T (480,)
+salinity (480,)
+mu (480,)
+mu_uncorrected (480,)
+m (480,)
+G (479,)
+Var_G (479,)
+dPsi (480,)
+dSigma (480,)
+-----------------------------------------------------
+#################   Iteration 9    #################
+-----------------------------------------------------
+[ACTION] Predicting directions
+[INFO] The number of directions is:  8
+[ACTION] Done predicting directions
+[TIMING] 	 The time used was:  0.103 s
+[INFO] max gradient:  0.024
+[INFO] coeff  [[0.9819506]]  intercept  [1.73254213]
+[ACTION] Adding new datapoints
+[INFO] Number of new datapoints:  156
+[INFO] Number of new datapoints after filtering:  156
+[INFO] Number of new datapoints after reduction:  52
+[ACTION] Done adding new datapoints
+[TIMING] 	 Time:  0.034 s
+9  Time for iteration:  0.15
+Time for plotting:  4.09
+-----------------------------------------------------
+#################   Iteration 10    #################
+-----------------------------------------------------
+[ACTION] Predicting directions
+[INFO] The number of directions is:  5
+[ACTION] Done predicting directions
+[TIMING] 	 The time used was:  0.099 s
+[INFO] max gradient:  0.024
+[INFO] coeff  [[0.97249872]]  intercept  [1.98858961]
+[ACTION] Adding new datapoints
+[INFO] Number of new datapoints:  156
+[INFO] Number of new datapoints after filtering:  156
+[INFO] Number of new datapoints after reduction:  52
+[ACTION] Done adding new datapoints
+[TIMING] 	 Time:  0.04 s
+10  Time for iteration:  0.15
+Time for plotting:  3.88
+has_points 
+path_list 
+S (584, 2)
+T (584,)
+salinity (584,)
+used_points (584,)
+inv_matrix (584, 584)
+inv_matrix_alt (14, 14)
+Sigma (584, 584)
+mu (584,)
+mu_uncorrected (584,)
+m (584,)
+Psi (584, 584)
+G (583,)
+Var_G (583,)
+has_points 
+S (584, 2)
+T (584,)
+salinity (584,)
+mu (584,)
+mu_uncorrected (584,)
+m (584,)
+G (583,)
+Var_G (583,)
+dPsi (584,)
+dSigma (584,)
+-----------------------------------------------------
+#################   Iteration 11    #################
+-----------------------------------------------------
+[ACTION] Predicting directions
+[INFO] The number of directions is:  7
+[ACTION] Done predicting directions
+[TIMING] 	 The time used was:  0.117 s
+[INFO] max gradient:  0.033
+[INFO] coeff  [[0.97008544]]  intercept  [2.07215955]
+[ACTION] Adding new datapoints
+[INFO] Number of new datapoints:  156
+[INFO] Number of new datapoints after filtering:  156
+[INFO] Number of new datapoints after reduction:  52
+[ACTION] Done adding new datapoints
+[TIMING] 	 Time:  0.214 s
+11  Time for iteration:  0.37
+Time for plotting:  4.25
+-----------------------------------------------------
+#################   Iteration 12    #################
+-----------------------------------------------------
+[ACTION] Predicting directions
+[INFO] The number of directions is:  3
+[ACTION] Done predicting directions
+[TIMING] 	 The time used was:  0.092 s
+[INFO] max gradient:  0.047
+[INFO] coeff  [[0.96504049]]  intercept  [2.21223542]
+[ACTION] Adding new datapoints
+[INFO] Number of new datapoints:  156
+[INFO] Number of new datapoints after filtering:  156
+[INFO] Number of new datapoints after reduction:  52
+[ACTION] Done adding new datapoints
+[TIMING] 	 Time:  0.063 s
+12  Time for iteration:  0.16
+Time for plotting:  4.88
+has_points 
+path_list 
+S (688, 2)
+T (688,)
+salinity (688,)
+used_points (688,)
+inv_matrix (688, 688)
+inv_matrix_alt (14, 14)
+Sigma (688, 688)
+mu (688,)
+mu_uncorrected (688,)
+m (688,)
+Psi (688, 688)
+G (687,)
+Var_G (687,)
+has_points 
+S (688, 2)
+T (688,)
+salinity (688,)
+mu (688,)
+mu_uncorrected (688,)
+m (688,)
+G (687,)
+Var_G (687,)
+dPsi (688,)
+dSigma (688,)
+-----------------------------------------------------
+#################   Iteration 13    #################
+-----------------------------------------------------
+[ACTION] Predicting directions
+[INFO] The number of directions is:  7
+[ACTION] Done predicting directions
+[TIMING] 	 The time used was:  0.179 s
+[INFO] max gradient:  0.047
+[INFO] coeff  [[0.95194121]]  intercept  [2.55017157]
+[ACTION] Adding new datapoints
+[INFO] Number of new datapoints:  156
+[INFO] Number of new datapoints after filtering:  156
+[INFO] Number of new datapoints after reduction:  52
+[ACTION] Done adding new datapoints
+[TIMING] 	 Time:  0.058 s
+13  Time for iteration:  0.24
+Time for plotting:  4.31
+Function:  estimate_gradient_transact
+total calls:  68  s
+Total time:  1.04  s
+Function:  add_new_datapoints
+total calls:  11  s
+Total time:  0.55  s
+Restarting AUV
+Data in memory before reset:  740
+Data in memory after rest:  0
+Loading most recent data
+[ACTION] Loading data from index:  15
+[INFO] experiment id: 12
+Data in memory after reloading data:  740
+-----------------------------------------------------
+#################   Iteration 14    #################
+-----------------------------------------------------
+[ACTION] Predicting directions
+[INFO] The number of directions is:  7
+[ACTION] Done predicting directions
+[TIMING] 	 The time used was:  0.279 s
+[INFO] max gradient:  0.047
+[INFO] coeff  [[0.95110984]]  intercept  [2.57454278]
+[ACTION] Adding new datapoints
+[INFO] Number of new datapoints:  156
+[INFO] Number of new datapoints after filtering:  156
+[INFO] Number of new datapoints after reduction:  52
+[ACTION] Done adding new datapoints
+[TIMING] 	 Time:  0.09 s
+14  Time for iteration:  0.38
+Time for plotting:  3.86
+has_points 
+path_list 
+S (792, 2)
+T (792,)
+salinity (792,)
+used_points (792,)
+inv_matrix (792, 792)
+inv_matrix_alt (14, 14)
+Sigma (792, 792)
+mu (792,)
+mu_uncorrected (792,)
+m (792,)
+Psi (792, 792)
+G (791,)
+Var_G (791,)
+has_points 
+S (792, 2)
+T (792,)
+salinity (792,)
+mu (792,)
+mu_uncorrected (792,)
+m (792,)
+G (791,)
+Var_G (791,)
+dPsi (792,)
+dSigma (792,)
+-----------------------------------------------------
+#################   Iteration 15    #################
+-----------------------------------------------------
+[ACTION] Predicting directions
+[INFO] The number of directions is:  7
+[ACTION] Done predicting directions
+[TIMING] 	 The time used was:  0.168 s
+[INFO] max gradient:  0.047
+[INFO] coeff  [[0.95091481]]  intercept  [2.57245645]
+[ACTION] Adding new datapoints
+[INFO] Number of new datapoints:  156
+[INFO] Number of new datapoints after filtering:  156
+[INFO] Number of new datapoints after reduction:  52
+[ACTION] Done adding new datapoints
+[TIMING] 	 Time:  0.103 s
+15  Time for iteration:  0.3
+Time for plotting:  4.21
+-----------------------------------------------------
+#################   Iteration 16    #################
+-----------------------------------------------------
+[ACTION] Predicting directions
+[INFO] The number of directions is:  8
+[ACTION] Done predicting directions
+[TIMING] 	 The time used was:  0.185 s
+[INFO] max gradient:  0.047
+[INFO] coeff  [[0.95611502]]  intercept  [2.45458117]
+[ACTION] Adding new datapoints
+[INFO] Number of new datapoints:  156
+[INFO] Number of new datapoints after filtering:  156
+[INFO] Number of new datapoints after reduction:  52
+[ACTION] Done adding new datapoints
+[TIMING] 	 Time:  0.13 s
+16  Time for iteration:  0.33
+Time for plotting:  5.0
+has_points 
+path_list 
+S (896, 2)
+T (896,)
+salinity (896,)
+used_points (896,)
+inv_matrix (896, 896)
+inv_matrix_alt (14, 14)
+Sigma (896, 896)
+mu (896,)
+mu_uncorrected (896,)
+m (896,)
+Psi (896, 896)
+G (895,)
+Var_G (895,)
+has_points 
+S (896, 2)
+T (896,)
+salinity (896,)
+mu (896,)
+mu_uncorrected (896,)
+m (896,)
+G (895,)
+Var_G (895,)
+dPsi (896,)
+dSigma (896,)
+-----------------------------------------------------
+#################   Iteration 17    #################
+-----------------------------------------------------
+[ACTION] Predicting directions
+[INFO] The number of directions is:  8
+[ACTION] Done predicting directions
+[TIMING] 	 The time used was:  0.63 s
+[INFO] max gradient:  0.047
+[INFO] coeff  [[0.9682742]]  intercept  [2.16981967]
+[ACTION] Adding new datapoints
+[INFO] Number of new datapoints:  156
+[INFO] Number of new datapoints after filtering:  156
+[INFO] Number of new datapoints after reduction:  52
+[ACTION] Done adding new datapoints
+[TIMING] 	 Time:  0.25 s
+17  Time for iteration:  0.89
+Time for plotting:  4.49
+Iteration took more than 0.5 seconds
+Down sampling data
+Data in memory before down sampling:  948
+[ACTION] Down sampling points
+[ACTION] Down sampling points done
+[TIMING] 	 Time for downsampling:  0.108  s
+Data in memory after down sampling:  474
+-----------------------------------------------------
+#################   Iteration 18    #################
+-----------------------------------------------------
+[ACTION] Predicting directions
+[INFO] The number of directions is:  7
+[ACTION] Done predicting directions
+[TIMING] 	 The time used was:  0.095 s
+[INFO] max gradient:  0.043
+[INFO] coeff  [[0.96387379]]  intercept  [2.27605128]
+[ACTION] Adding new datapoints
+[INFO] Number of new datapoints:  156
+[INFO] Number of new datapoints after filtering:  155
+[INFO] Number of new datapoints after reduction:  51
+[ACTION] Done adding new datapoints
+[TIMING] 	 Time:  0.032 s
+18  Time for iteration:  0.16
+Time for plotting:  3.79
+S (525, 2)
+T (525,)
+salinity (525,)
+Sigma (525, 525)
+mu (525,)
+mu_uncorrected (525,)
+m (525,)
+Psi (525, 525)
+G (524,)
+Var_G (524,)
+inv_matrix (525, 525)
+has_points 
+used_points (999,)
+path_list 
+has_points 
+S (999, 2)
+T (999,)
+salinity (999,)
+mu (999,)
+mu_uncorrected (999,)
+m (999,)
+G (998,)
+Var_G (998,)
+dPsi (999,)
+dSigma (999,)
+-----------------------------------------------------
+#################   Iteration 19    #################
+-----------------------------------------------------
+[ACTION] Predicting directions
+[INFO] The number of directions is:  7
+[ACTION] Done predicting directions
+[TIMING] 	 The time used was:  0.136 s
+[INFO] max gradient:  0.043
+[INFO] coeff  [[0.95258926]]  intercept  [2.54703086]
+[ACTION] Adding new datapoints
+[INFO] Number of new datapoints:  156
+[INFO] Number of new datapoints after filtering:  156
+[INFO] Number of new datapoints after reduction:  52
+[ACTION] Done adding new datapoints
+[TIMING] 	 Time:  0.043 s
+19  Time for iteration:  0.19
+Time for plotting:  3.82
+-----------------------------------------------------
+#################   Iteration 20    #################
+-----------------------------------------------------
+[ACTION] Predicting directions
+[INFO] The number of directions is:  7
+[ACTION] Done predicting directions
+[TIMING] 	 The time used was:  0.219 s
+[INFO] max gradient:  0.043
+[INFO] coeff  [[0.94658911]]  intercept  [2.69028528]
+[ACTION] Adding new datapoints
+[INFO] Number of new datapoints:  156
+[INFO] Number of new datapoints after filtering:  156
+[INFO] Number of new datapoints after reduction:  52
+[ACTION] Done adding new datapoints
+[TIMING] 	 Time:  0.046 s
+20  Time for iteration:  0.27
+Time for plotting:  4.28
+S (629, 2)
+T (629,)
+salinity (629,)
+Sigma (629, 629)
+mu (629,)
+mu_uncorrected (629,)
+m (629,)
+Psi (629, 629)
+G (628,)
+Var_G (628,)
+inv_matrix (629, 629)
+has_points 
+used_points (1103,)
+path_list 
+has_points 
+S (1103, 2)
+T (1103,)
+salinity (1103,)
+mu (1103,)
+mu_uncorrected (1103,)
+m (1103,)
+G (1102,)
+Var_G (1102,)
+dPsi (1103,)
+dSigma (1103,)
+-----------------------------------------------------
+#################   Iteration 21    #################
+-----------------------------------------------------
+[ACTION] Predicting directions
+[INFO] The number of directions is:  7
+[ACTION] Done predicting directions
+[TIMING] 	 The time used was:  0.151 s
+[INFO] max gradient:  0.043
+[INFO] coeff  [[0.94738361]]  intercept  [2.6711024]
+[ACTION] Adding new datapoints
+[INFO] Number of new datapoints:  156
+[INFO] Number of new datapoints after filtering:  156
+[INFO] Number of new datapoints after reduction:  52
+[ACTION] Done adding new datapoints
+[TIMING] 	 Time:  0.055 s
+21  Time for iteration:  0.21
+Time for plotting:  5.13
+-----------------------------------------------------
+#################   Iteration 22    #################
+-----------------------------------------------------
+[ACTION] Predicting directions
+[INFO] The number of directions is:  6
+[ACTION] Done predicting directions
+[TIMING] 	 The time used was:  0.16 s
+[INFO] max gradient:  0.043
+[INFO] coeff  [[0.9546176]]  intercept  [2.49683857]
+[ACTION] Adding new datapoints
+[INFO] Number of new datapoints:  156
+[INFO] Number of new datapoints after filtering:  156
+[INFO] Number of new datapoints after reduction:  52
+[ACTION] Done adding new datapoints
+[TIMING] 	 Time:  0.062 s
+22  Time for iteration:  0.28
+Time for plotting:  4.06
+S (733, 2)
+T (733,)
+salinity (733,)
+Sigma (733, 733)
+mu (733,)
+mu_uncorrected (733,)
+m (733,)
+Psi (733, 733)
+G (732,)
+Var_G (732,)
+inv_matrix (733, 733)
+has_points 
+used_points (1207,)
+path_list 
+has_points 
+S (1207, 2)
+T (1207,)
+salinity (1207,)
+mu (1207,)
+mu_uncorrected (1207,)
+m (1207,)
+G (1206,)
+Var_G (1206,)
+dPsi (1207,)
+dSigma (1207,)
+-----------------------------------------------------
+#################   Iteration 23    #################
+-----------------------------------------------------
+[ACTION] Predicting directions
+[INFO] The number of directions is:  7
+[ACTION] Done predicting directions
+[TIMING] 	 The time used was:  0.146 s
+[INFO] max gradient:  0.043
+[INFO] coeff  [[0.95698694]]  intercept  [2.43985627]
+[ACTION] Adding new datapoints
+[INFO] Number of new datapoints:  156
+[INFO] Number of new datapoints after filtering:  156
+[INFO] Number of new datapoints after reduction:  52
+[ACTION] Done adding new datapoints
+[TIMING] 	 Time:  0.083 s
+23  Time for iteration:  0.24
+Time for plotting:  4.09
+-----------------------------------------------------
+#################   Iteration 24    #################
+-----------------------------------------------------
+[ACTION] Predicting directions
+[INFO] The number of directions is:  4
+[ACTION] Done predicting directions
+[TIMING] 	 The time used was:  0.064 s
+[INFO] max gradient:  0.043
+[INFO] coeff  [[0.95584587]]  intercept  [2.46714612]
+[ACTION] Adding new datapoints
+[INFO] Number of new datapoints:  156
+[INFO] Number of new datapoints after filtering:  156
+[INFO] Number of new datapoints after reduction:  52
+[ACTION] Done adding new datapoints
+[TIMING] 	 Time:  0.18 s
+24  Time for iteration:  0.25
+Time for plotting:  4.42
+S (837, 2)
+T (837,)
+salinity (837,)
+Sigma (837, 837)
+mu (837,)
+mu_uncorrected (837,)
+m (837,)
+Psi (837, 837)
+G (836,)
+Var_G (836,)
+inv_matrix (837, 837)
+has_points 
+used_points (1311,)
+path_list 
+has_points 
+S (1311, 2)
+T (1311,)
+salinity (1311,)
+mu (1311,)
+mu_uncorrected (1311,)
+m (1311,)
+G (1310,)
+Var_G (1310,)
+dPsi (1311,)
+dSigma (1311,)
+-----------------------------------------------------
+#################   Iteration 25    #################
+-----------------------------------------------------
+[ACTION] Predicting directions
+[INFO] The number of directions is:  5
+[ACTION] Done predicting directions
+[TIMING] 	 The time used was:  0.172 s
+[INFO] max gradient:  0.043
+[INFO] coeff  [[0.94988076]]  intercept  [2.61026837]
+[ACTION] Adding new datapoints
+[INFO] Number of new datapoints:  156
+[INFO] Number of new datapoints after filtering:  156
+[INFO] Number of new datapoints after reduction:  52
+[ACTION] Done adding new datapoints
+[TIMING] 	 Time:  0.137 s
+25  Time for iteration:  0.32
+Time for plotting:  4.79
+-----------------------------------------------------
+#################   Iteration 26    #################
+-----------------------------------------------------
+[ACTION] Predicting directions
+[INFO] The number of directions is:  5
+[ACTION] Done predicting directions
+[TIMING] 	 The time used was:  0.129 s
+[INFO] max gradient:  0.043
+[INFO] coeff  [[0.94289547]]  intercept  [2.77875929]
+[ACTION] Adding new datapoints
+[INFO] Number of new datapoints:  156
+[INFO] Number of new datapoints after filtering:  156
+[INFO] Number of new datapoints after reduction:  52
+[ACTION] Done adding new datapoints
+[TIMING] 	 Time:  0.145 s
+26  Time for iteration:  0.31
+Time for plotting:  4.71
+S (941, 2)
+T (941,)
+salinity (941,)
+Sigma (941, 941)
+mu (941,)
+mu_uncorrected (941,)
+m (941,)
+Psi (941, 941)
+G (940,)
+Var_G (940,)
+inv_matrix (941, 941)
+has_points 
+used_points (1415,)
+path_list 
+has_points 
+S (1415, 2)
+T (1415,)
+salinity (1415,)
+mu (1415,)
+mu_uncorrected (1415,)
+m (1415,)
+G (1414,)
+Var_G (1414,)
+dPsi (1415,)
+dSigma (1415,)
+-----------------------------------------------------
+#################   Iteration 27    #################
+-----------------------------------------------------
+[ACTION] Predicting directions
+[INFO] The number of directions is:  3
+[ACTION] Done predicting directions
+[TIMING] 	 The time used was:  0.096 s
+[INFO] max gradient:  0.043
+[INFO] coeff  [[0.93671527]]  intercept  [2.92877147]
+[ACTION] Adding new datapoints
+[INFO] Number of new datapoints:  156
+[INFO] Number of new datapoints after filtering:  156
+[INFO] Number of new datapoints after reduction:  52
+[ACTION] Done adding new datapoints
+[TIMING] 	 Time:  0.278 s
+27  Time for iteration:  0.38
+Time for plotting:  5.76
+-----------------------------------------------------
+#################   Iteration 28    #################
+-----------------------------------------------------
+[ACTION] Predicting directions
+[INFO] The number of directions is:  4
+[ACTION] Done predicting directions
+[TIMING] 	 The time used was:  0.08 s
+[INFO] max gradient:  0.043
+[INFO] coeff  [[0.92515503]]  intercept  [3.21060433]
+[ACTION] Adding new datapoints
+[INFO] Number of new datapoints:  156
+[INFO] Number of new datapoints after filtering:  156
+[INFO] Number of new datapoints after reduction:  52
+[ACTION] Done adding new datapoints
+[TIMING] 	 Time:  0.248 s
+28  Time for iteration:  0.34
+Time for plotting:  4.67
+S (1045, 2)
+T (1045,)
+salinity (1045,)
+Sigma (1045, 1045)
+mu (1045,)
+mu_uncorrected (1045,)
+m (1045,)
+Psi (1045, 1045)
+G (1044,)
+Var_G (1044,)
+inv_matrix (1045, 1045)
+has_points 
+used_points (1519,)
+path_list 
+has_points 
+S (1519, 2)
+T (1519,)
+salinity (1519,)
+mu (1519,)
+mu_uncorrected (1519,)
+m (1519,)
+G (1518,)
+Var_G (1518,)
+dPsi (1519,)
+dSigma (1519,)
+-----------------------------------------------------
+#################   Iteration 29    #################
+-----------------------------------------------------
+[ACTION] Predicting directions
+[INFO] The number of directions is:  7
+[ACTION] Done predicting directions
+[TIMING] 	 The time used was:  0.119 s
+[INFO] max gradient:  0.043
+[INFO] coeff  [[0.91369135]]  intercept  [3.49050737]
+[ACTION] Adding new datapoints
+[INFO] Number of new datapoints:  156
+[INFO] Number of new datapoints after filtering:  156
+[INFO] Number of new datapoints after reduction:  52
+[ACTION] Done adding new datapoints
+[TIMING] 	 Time:  0.151 s
+29  Time for iteration:  0.28
+Time for plotting:  4.5
+-----------------------------------------------------
+#################   Iteration 30    #################
+-----------------------------------------------------
+[ACTION] Predicting directions
+[INFO] The number of directions is:  5
+[ACTION] Done predicting directions
+[TIMING] 	 The time used was:  0.092 s
+[INFO] max gradient:  0.043
+[INFO] coeff  [[0.90879375]]  intercept  [3.6099052]
+[ACTION] Adding new datapoints
+[INFO] Number of new datapoints:  156
+[INFO] Number of new datapoints after filtering:  156
+[INFO] Number of new datapoints after reduction:  52
+[ACTION] Done adding new datapoints
+[TIMING] 	 Time:  0.183 s
+30  Time for iteration:  0.31
+Time for plotting:  4.44
+S (1149, 2)
+T (1149,)
+salinity (1149,)
+Sigma (1149, 1149)
+mu (1149,)
+mu_uncorrected (1149,)
+m (1149,)
+Psi (1149, 1149)
+G (1148,)
+Var_G (1148,)
+inv_matrix (1149, 1149)
+has_points 
+used_points (1623,)
+path_list 
+has_points 
+S (1623, 2)
+T (1623,)
+salinity (1623,)
+mu (1623,)
+mu_uncorrected (1623,)
+m (1623,)
+G (1622,)
+Var_G (1622,)
+dPsi (1623,)
+dSigma (1623,)
+-----------------------------------------------------
+#################   Iteration 31    #################
+-----------------------------------------------------
+[ACTION] Predicting directions
+[INFO] The number of directions is:  4
+[ACTION] Done predicting directions
+[TIMING] 	 The time used was:  0.121 s
+[INFO] max gradient:  0.043
+[INFO] coeff  [[0.90916804]]  intercept  [3.60096095]
+[ACTION] Adding new datapoints
+[INFO] Number of new datapoints:  156
+[INFO] Number of new datapoints after filtering:  155
+[INFO] Number of new datapoints after reduction:  51
+[ACTION] Done adding new datapoints
+[TIMING] 	 Time:  0.168 s
+31  Time for iteration:  0.32
+Time for plotting:  4.52
+-----------------------------------------------------
+#################   Iteration 32    #################
+-----------------------------------------------------
+[ACTION] Predicting directions
+[INFO] The number of directions is:  2
+[ACTION] Done predicting directions
+[TIMING] 	 The time used was:  0.059 s
+[INFO] max gradient:  0.043
+[INFO] coeff  [[0.90833368]]  intercept  [3.62085241]
+[ACTION] Adding new datapoints
+[INFO] Number of new datapoints:  156
+[INFO] Number of new datapoints after filtering:  156
+[INFO] Number of new datapoints after reduction:  52
+[ACTION] Done adding new datapoints
+[TIMING] 	 Time:  0.203 s
+32  Time for iteration:  0.27
+Time for plotting:  4.46
+S (1252, 2)
+T (1252,)
+salinity (1252,)
+Sigma (1252, 1252)
+mu (1252,)
+mu_uncorrected (1252,)
+m (1252,)
+Psi (1252, 1252)
+G (1251,)
+Var_G (1251,)
+inv_matrix (1252, 1252)
+has_points 
+used_points (1726,)
+path_list 
+has_points 
+S (1726, 2)
+T (1726,)
+salinity (1726,)
+mu (1726,)
+mu_uncorrected (1726,)
+m (1726,)
+G (1725,)
+Var_G (1725,)
+dPsi (1726,)
+dSigma (1726,)
+-----------------------------------------------------
+#################   Iteration 33    #################
+-----------------------------------------------------
+[ACTION] Predicting directions
+[INFO] The number of directions is:  6
+[ACTION] Done predicting directions
+[TIMING] 	 The time used was:  0.107 s
+[INFO] max gradient:  0.043
+[INFO] coeff  [[0.90656902]]  intercept  [3.66312129]
+[ACTION] Adding new datapoints
+[INFO] Number of new datapoints:  156
+[INFO] Number of new datapoints after filtering:  156
+[INFO] Number of new datapoints after reduction:  52
+[ACTION] Done adding new datapoints
+[TIMING] 	 Time:  0.253 s
+33  Time for iteration:  0.37
+Time for plotting:  4.35
+-----------------------------------------------------
+#################   Iteration 34    #################
+-----------------------------------------------------
+[ACTION] Predicting directions
+[INFO] The number of directions is:  5
+[ACTION] Done predicting directions
+[TIMING] 	 The time used was:  0.156 s
+[INFO] max gradient:  0.043
+[INFO] coeff  [[0.90263703]]  intercept  [3.7584319]
+[ACTION] Adding new datapoints
+[INFO] Number of new datapoints:  156
+[INFO] Number of new datapoints after filtering:  156
+[INFO] Number of new datapoints after reduction:  52
+[ACTION] Done adding new datapoints
+[TIMING] 	 Time:  0.238 s
+34  Time for iteration:  0.43
+Time for plotting:  5.7
+S (1356, 2)
+T (1356,)
+salinity (1356,)
+Sigma (1356, 1356)
+mu (1356,)
+mu_uncorrected (1356,)
+m (1356,)
+Psi (1356, 1356)
+G (1355,)
+Var_G (1355,)
+inv_matrix (1356, 1356)
+has_points 
+used_points (1830,)
+path_list 
+has_points 
+S (1830, 2)
+T (1830,)
+salinity (1830,)
+mu (1830,)
+mu_uncorrected (1830,)
+m (1830,)
+G (1829,)
+Var_G (1829,)
+dPsi (1830,)
+dSigma (1830,)
+Function:  estimate_gradient_transact
+total calls:  121  s
+Total time:  3.33  s
+Function:  add_new_datapoints
+total calls:  21  s
+Total time:  3.08  s
+Function:  down_sample_points
+total calls:  1  s
+Total time:  0.11  s
+Restarting AUV
+Data in memory before reset:  1356
+Data in memory after rest:  0
+Loading most recent data
+[ACTION] Loading data from index:  36
+[INFO] experiment id: 12
+Data in memory after reloading data:  1356
+-----------------------------------------------------
+#################   Iteration 35    #################
+-----------------------------------------------------
+[ACTION] Predicting directions
+[INFO] The number of directions is:  6
+[ACTION] Done predicting directions
+[TIMING] 	 The time used was:  0.205 s
+[INFO] max gradient:  0.043
+[INFO] coeff  [[0.89566805]]  intercept  [3.92872947]
+[ACTION] Adding new datapoints
+[INFO] Number of new datapoints:  156
+[INFO] Number of new datapoints after filtering:  156
+[INFO] Number of new datapoints after reduction:  52
+[ACTION] Done adding new datapoints
+[TIMING] 	 Time:  0.247 s
+35  Time for iteration:  0.46
+Time for plotting:  4.43
+-----------------------------------------------------
+#################   Iteration 36    #################
+-----------------------------------------------------
+[ACTION] Predicting directions
+[INFO] The number of directions is:  5
+[ACTION] Done predicting directions
+[TIMING] 	 The time used was:  0.148 s
+[INFO] max gradient:  0.043
+[INFO] coeff  [[0.89181662]]  intercept  [4.0224869]
+[ACTION] Adding new datapoints
+[INFO] Number of new datapoints:  156
+[INFO] Number of new datapoints after filtering:  156
+[INFO] Number of new datapoints after reduction:  52
+[ACTION] Done adding new datapoints
+[TIMING] 	 Time:  0.327 s
+36  Time for iteration:  0.49
+Time for plotting:  4.55
+S (1460, 2)
+T (1460,)
+salinity (1460,)
+Sigma (1460, 1460)
+mu (1460,)
+mu_uncorrected (1460,)
+m (1460,)
+Psi (1460, 1460)
+G (1459,)
+Var_G (1459,)
+inv_matrix (1460, 1460)
+has_points 
+used_points (1934,)
+path_list 
+has_points 
+S (1934, 2)
+T (1934,)
+salinity (1934,)
+mu (1934,)
+mu_uncorrected (1934,)
+m (1934,)
+G (1933,)
+Var_G (1933,)
+dPsi (1934,)
+dSigma (1934,)
+-----------------------------------------------------
+#################   Iteration 37    #################
+-----------------------------------------------------
+[ACTION] Predicting directions
+[INFO] The number of directions is:  8
+[ACTION] Done predicting directions
+[TIMING] 	 The time used was:  0.188 s
+[INFO] max gradient:  0.043
+[INFO] coeff  [[0.89177986]]  intercept  [4.02337489]
+[ACTION] Adding new datapoints
+[INFO] Number of new datapoints:  156
+[INFO] Number of new datapoints after filtering:  156
+[INFO] Number of new datapoints after reduction:  52
+[ACTION] Done adding new datapoints
+[TIMING] 	 Time:  0.317 s
+37  Time for iteration:  0.52
+Time for plotting:  4.76
+Iteration took more than 0.5 seconds
+Down sampling data
+Data in memory before down sampling:  1512
+[ACTION] Down sampling points
+[ACTION] Down sampling points done
+[TIMING] 	 Time for downsampling:  0.066  s
+Data in memory after down sampling:  756
+-----------------------------------------------------
+#################   Iteration 38    #################
+-----------------------------------------------------
+[ACTION] Predicting directions
+[INFO] The number of directions is:  6
+[ACTION] Done predicting directions
+[TIMING] 	 The time used was:  0.131 s
+[INFO] max gradient:  0.037
+[INFO] coeff  [[0.89260302]]  intercept  [4.00357557]
+[ACTION] Adding new datapoints
+[INFO] Number of new datapoints:  156
+[INFO] Number of new datapoints after filtering:  156
+[INFO] Number of new datapoints after reduction:  52
+[ACTION] Done adding new datapoints
+[TIMING] 	 Time:  0.099 s
+38  Time for iteration:  0.27
+Time for plotting:  4.15
+S (808, 2)
+T (808,)
+salinity (808,)
+Sigma (808, 808)
+mu (808,)
+mu_uncorrected (808,)
+m (808,)
+Psi (808, 808)
+G (807,)
+Var_G (807,)
+inv_matrix (808, 808)
+has_points 
+used_points (2038,)
+path_list 
+has_points 
+S (2038, 2)
+T (2038,)
+salinity (2038,)
+mu (2038,)
+mu_uncorrected (2038,)
+m (2038,)
+G (2037,)
+Var_G (2037,)
+dPsi (2038,)
+dSigma (2038,)
+-----------------------------------------------------
+#################   Iteration 39    #################
+-----------------------------------------------------
+[ACTION] Predicting directions
+[INFO] The number of directions is:  6
+[ACTION] Done predicting directions
+[TIMING] 	 The time used was:  0.233 s
+[INFO] max gradient:  0.037
+[INFO] coeff  [[0.89387921]]  intercept  [3.97313781]
+[ACTION] Adding new datapoints
+[INFO] Number of new datapoints:  156
+[INFO] Number of new datapoints after filtering:  156
+[INFO] Number of new datapoints after reduction:  52
+[ACTION] Done adding new datapoints
+[TIMING] 	 Time:  0.086 s
+39  Time for iteration:  0.33
+Time for plotting:  4.03
+-----------------------------------------------------
+#################   Iteration 40    #################
+-----------------------------------------------------
+[ACTION] Predicting directions
+[INFO] The number of directions is:  8
+[ACTION] Done predicting directions
+[TIMING] 	 The time used was:  0.131 s
+[INFO] max gradient:  0.037
+[INFO] coeff  [[0.89593796]]  intercept  [3.92525379]
+[ACTION] Adding new datapoints
+[INFO] Number of new datapoints:  156
+[INFO] Number of new datapoints after filtering:  156
+[INFO] Number of new datapoints after reduction:  52
+[ACTION] Done adding new datapoints
+[TIMING] 	 Time:  0.154 s
+40  Time for iteration:  0.3
+Time for plotting:  6.22
+S (912, 2)
+T (912,)
+salinity (912,)
+Sigma (912, 912)
+mu (912,)
+mu_uncorrected (912,)
+m (912,)
+Psi (912, 912)
+G (911,)
+Var_G (911,)
+inv_matrix (912, 912)
+has_points 
+used_points (2142,)
+path_list 
+has_points 
+S (2142, 2)
+T (2142,)
+salinity (2142,)
+mu (2142,)
+mu_uncorrected (2142,)
+m (2142,)
+G (2141,)
+Var_G (2141,)
+dPsi (2142,)
+dSigma (2142,)
+-----------------------------------------------------
+#################   Iteration 41    #################
+-----------------------------------------------------
+[ACTION] Predicting directions
+[INFO] The number of directions is:  7
+[ACTION] Done predicting directions
+[TIMING] 	 The time used was:  0.13 s
+[INFO] max gradient:  0.037
+[INFO] coeff  [[0.89904071]]  intercept  [3.85379707]
+[ACTION] Adding new datapoints
+[INFO] Number of new datapoints:  156
+[INFO] Number of new datapoints after filtering:  156
+[INFO] Number of new datapoints after reduction:  52
+[ACTION] Done adding new datapoints
+[TIMING] 	 Time:  0.107 s
+41  Time for iteration:  0.31
+Time for plotting:  4.11
+-----------------------------------------------------
+#################   Iteration 42    #################
+-----------------------------------------------------
+[ACTION] Predicting directions
+[INFO] The number of directions is:  7
+[ACTION] Done predicting directions
+[TIMING] 	 The time used was:  0.149 s
+[INFO] max gradient:  0.037
+[INFO] coeff  [[0.90120858]]  intercept  [3.80396347]
+[ACTION] Adding new datapoints
+[INFO] Number of new datapoints:  156
+[INFO] Number of new datapoints after filtering:  156
+[INFO] Number of new datapoints after reduction:  52
+[ACTION] Done adding new datapoints
+[TIMING] 	 Time:  0.134 s
+42  Time for iteration:  0.3
+Time for plotting:  4.18
+S (1016, 2)
+T (1016,)
+salinity (1016,)
+Sigma (1016, 1016)
+mu (1016,)
+mu_uncorrected (1016,)
+m (1016,)
+Psi (1016, 1016)
+G (1015,)
+Var_G (1015,)
+inv_matrix (1016, 1016)
+has_points 
+used_points (2246,)
+path_list 
+has_points 
+S (2246, 2)
+T (2246,)
+salinity (2246,)
+mu (2246,)
+mu_uncorrected (2246,)
+m (2246,)
+G (2245,)
+Var_G (2245,)
+dPsi (2246,)
+dSigma (2246,)
+-----------------------------------------------------
+#################   Iteration 43    #################
+-----------------------------------------------------
+[ACTION] Predicting directions
+[INFO] The number of directions is:  7
+[ACTION] Done predicting directions
+[TIMING] 	 The time used was:  0.153 s
+[INFO] max gradient:  0.037
+[INFO] coeff  [[0.90157697]]  intercept  [3.79588961]
+[ACTION] Adding new datapoints
+[INFO] Number of new datapoints:  156
+[INFO] Number of new datapoints after filtering:  156
+[INFO] Number of new datapoints after reduction:  52
+[ACTION] Done adding new datapoints
+[TIMING] 	 Time:  0.173 s
+43  Time for iteration:  0.33
+Time for plotting:  5.82
+-----------------------------------------------------
+#################   Iteration 44    #################
+-----------------------------------------------------
+[ACTION] Predicting directions
+[INFO] The number of directions is:  6
+[ACTION] Done predicting directions
+[TIMING] 	 The time used was:  0.167 s
+[INFO] max gradient:  0.037
+[INFO] coeff  [[0.90162783]]  intercept  [3.79579328]
+[ACTION] Adding new datapoints
+[INFO] Number of new datapoints:  156
+[INFO] Number of new datapoints after filtering:  156
+[INFO] Number of new datapoints after reduction:  52
+[ACTION] Done adding new datapoints
+[TIMING] 	 Time:  0.136 s
+44  Time for iteration:  0.32
+Time for plotting:  4.15
+S (1120, 2)
+T (1120,)
+salinity (1120,)
+Sigma (1120, 1120)
+mu (1120,)
+mu_uncorrected (1120,)
+m (1120,)
+Psi (1120, 1120)
+G (1119,)
+Var_G (1119,)
+inv_matrix (1120, 1120)
+has_points 
+used_points (2350,)
+path_list 
+has_points 
+S (2350, 2)
+T (2350,)
+salinity (2350,)
+mu (2350,)
+mu_uncorrected (2350,)
+m (2350,)
+G (2349,)
+Var_G (2349,)
+dPsi (2350,)
+dSigma (2350,)
+-----------------------------------------------------
+#################   Iteration 45    #################
+-----------------------------------------------------
+[ACTION] Predicting directions
+[INFO] The number of directions is:  7
+[ACTION] Done predicting directions
+[TIMING] 	 The time used was:  0.191 s
+[INFO] max gradient:  0.037
+[INFO] coeff  [[0.9012342]]  intercept  [3.81397628]
+[ACTION] Adding new datapoints
+[INFO] Number of new datapoints:  156
+[INFO] Number of new datapoints after filtering:  156
+[INFO] Number of new datapoints after reduction:  52
+[ACTION] Done adding new datapoints
+[TIMING] 	 Time:  0.203 s
+45  Time for iteration:  0.43
+Time for plotting:  4.3
+-----------------------------------------------------
+#################   Iteration 46    #################
+-----------------------------------------------------
+[ACTION] Predicting directions
+[INFO] The number of directions is:  7
+[ACTION] Done predicting directions
+[TIMING] 	 The time used was:  0.283 s
+[INFO] max gradient:  0.037
+[INFO] coeff  [[0.89973053]]  intercept  [3.86284068]
+[ACTION] Adding new datapoints
+[INFO] Number of new datapoints:  156
+[INFO] Number of new datapoints after filtering:  156
+[INFO] Number of new datapoints after reduction:  52
+[ACTION] Done adding new datapoints
+[TIMING] 	 Time:  0.178 s
+46  Time for iteration:  0.47
+Time for plotting:  4.24
+S (1224, 2)
+T (1224,)
+salinity (1224,)
+Sigma (1224, 1224)
+mu (1224,)
+mu_uncorrected (1224,)
+m (1224,)
+Psi (1224, 1224)
+G (1223,)
+Var_G (1223,)
+inv_matrix (1224, 1224)
+has_points 
+used_points (2454,)
+path_list 
+has_points 
+S (2454, 2)
+T (2454,)
+salinity (2454,)
+mu (2454,)
+mu_uncorrected (2454,)
+m (2454,)
+G (2453,)
+Var_G (2453,)
+dPsi (2454,)
+dSigma (2454,)
+-----------------------------------------------------
+#################   Iteration 47    #################
+-----------------------------------------------------
+[ACTION] Predicting directions
+[INFO] The number of directions is:  8
+[ACTION] Done predicting directions
+[TIMING] 	 The time used was:  0.19 s
+[INFO] max gradient:  0.037
+[INFO] coeff  [[0.90008778]]  intercept  [3.85284355]
+[ACTION] Adding new datapoints
+[INFO] Number of new datapoints:  156
+[INFO] Number of new datapoints after filtering:  156
+[INFO] Number of new datapoints after reduction:  52
+[ACTION] Done adding new datapoints
+[TIMING] 	 Time:  0.234 s
+47  Time for iteration:  0.43
+Time for plotting:  4.55
+Function:  estimate_gradient_transact
+total calls:  88  s
+Total time:  2.28  s
+Function:  add_new_datapoints
+total calls:  13  s
+Total time:  2.39  s
+Function:  down_sample_points
+total calls:  1  s
+Total time:  0.07  s
+Restarting AUV
+Data in memory before reset:  1276
+Data in memory after rest:  0
+Loading most recent data
+[ACTION] Loading data from index:  49
+[INFO] experiment id: 12
+Data in memory after reloading data:  1276
+-----------------------------------------------------
+#################   Iteration 48    #################
+-----------------------------------------------------
+[ACTION] Predicting directions
+[INFO] The number of directions is:  8
+[ACTION] Done predicting directions
+[TIMING] 	 The time used was:  0.191 s
+[INFO] max gradient:  0.037
+[INFO] coeff  [[0.90055425]]  intercept  [3.83949822]
+[ACTION] Adding new datapoints
+[INFO] Number of new datapoints:  156
+[INFO] Number of new datapoints after filtering:  156
+[INFO] Number of new datapoints after reduction:  52
+[ACTION] Done adding new datapoints
+[TIMING] 	 Time:  0.252 s
+48  Time for iteration:  0.45
+Time for plotting:  4.36
+S (1328, 2)
+T (1328,)
+salinity (1328,)
+Sigma (1328, 1328)
+mu (1328,)
+mu_uncorrected (1328,)
+m (1328,)
+Psi (1328, 1328)
+G (1327,)
+Var_G (1327,)
+inv_matrix (1328, 1328)
+has_points 
+used_points (2558,)
+path_list 
+has_points 
+S (2558, 2)
+T (2558,)
+salinity (2558,)
+mu (2558,)
+mu_uncorrected (2558,)
+m (2558,)
+G (2557,)
+Var_G (2557,)
+dPsi (2558,)
+dSigma (2558,)
+-----------------------------------------------------
+#################   Iteration 49    #################
+-----------------------------------------------------
+[ACTION] Predicting directions
+[INFO] The number of directions is:  5
+[ACTION] Done predicting directions
+[TIMING] 	 The time used was:  0.154 s
+[INFO] max gradient:  0.037
+[INFO] coeff  [[0.90066954]]  intercept  [3.83670925]
+[ACTION] Adding new datapoints
+[INFO] Number of new datapoints:  156
+[INFO] Number of new datapoints after filtering:  156
+[INFO] Number of new datapoints after reduction:  52
+[ACTION] Done adding new datapoints
+[TIMING] 	 Time:  0.272 s
+49  Time for iteration:  0.46
+Time for plotting:  4.41
+-----------------------------------------------------
+#################   Iteration 50    #################
+-----------------------------------------------------
+[ACTION] Predicting directions
+[INFO] The number of directions is:  4
+[ACTION] Done predicting directions
+[TIMING] 	 The time used was:  0.164 s
+[INFO] max gradient:  0.037
+[INFO] coeff  [[0.90116449]]  intercept  [3.82306673]
+[ACTION] Adding new datapoints
+[INFO] Number of new datapoints:  156
+[INFO] Number of new datapoints after filtering:  156
+[INFO] Number of new datapoints after reduction:  52
+[ACTION] Done adding new datapoints
+[TIMING] 	 Time:  0.263 s
+50  Time for iteration:  0.43
+Time for plotting:  4.36
+S (1432, 2)
+T (1432,)
+salinity (1432,)
+Sigma (1432, 1432)
+mu (1432,)
+mu_uncorrected (1432,)
+m (1432,)
+Psi (1432, 1432)
+G (1431,)
+Var_G (1431,)
+inv_matrix (1432, 1432)
+has_points 
+used_points (2662,)
+path_list 
+has_points 
+S (2662, 2)
+T (2662,)
+salinity (2662,)
+mu (2662,)
+mu_uncorrected (2662,)
+m (2662,)
+G (2661,)
+Var_G (2661,)
+dPsi (2662,)
+dSigma (2662,)
+-----------------------------------------------------
+#################   Iteration 51    #################
+-----------------------------------------------------
+[ACTION] Predicting directions
+[INFO] The number of directions is:  6
+[ACTION] Done predicting directions
+[TIMING] 	 The time used was:  0.203 s
+[INFO] max gradient:  0.037
+[INFO] coeff  [[0.90011856]]  intercept  [3.85821815]
+[ACTION] Adding new datapoints
+[INFO] Number of new datapoints:  156
+[INFO] Number of new datapoints after filtering:  156
+[INFO] Number of new datapoints after reduction:  52
+[ACTION] Done adding new datapoints
+[TIMING] 	 Time:  0.271 s
+51  Time for iteration:  0.49
+Time for plotting:  6.96
+-----------------------------------------------------
+#################   Iteration 52    #################
+-----------------------------------------------------
+[ACTION] Predicting directions
+[INFO] The number of directions is:  7
+[ACTION] Done predicting directions
+[TIMING] 	 The time used was:  0.207 s
+[INFO] max gradient:  0.037
+[INFO] coeff  [[0.90173619]]  intercept  [3.82717847]
+[ACTION] Adding new datapoints
+[INFO] Number of new datapoints:  156
+[INFO] Number of new datapoints after filtering:  156
+[INFO] Number of new datapoints after reduction:  52
+[ACTION] Done adding new datapoints
+[TIMING] 	 Time:  0.362 s
+52  Time for iteration:  0.59
+Time for plotting:  4.59
+Iteration took more than 0.5 seconds
+Down sampling data
+Data in memory before down sampling:  1536
+[ACTION] Down sampling points
+[ACTION] Down sampling points done
+[TIMING] 	 Time for downsampling:  0.048  s
+Data in memory after down sampling:  768
+S (768, 2)
+T (768,)
+salinity (768,)
+Sigma (768, 768)
+mu (768,)
+mu_uncorrected (768,)
+m (768,)
+Psi (768, 768)
+G (768,)
+Var_G (768,)
+inv_matrix (768, 768)
+has_points 
+used_points (2766,)
+path_list 
+has_points 
+S (2766, 2)
+T (2766,)
+salinity (2766,)
+mu (2766,)
+mu_uncorrected (2766,)
+m (2766,)
+G (2765,)
+Var_G (2765,)
+dPsi (2766,)
+dSigma (2766,)
+-----------------------------------------------------
+#################   Iteration 53    #################
+-----------------------------------------------------
+[ACTION] Predicting directions
+[INFO] The number of directions is:  7
+[ACTION] Done predicting directions
+[TIMING] 	 The time used was:  0.135 s
+[INFO] max gradient:  0.026
+[INFO] coeff  [[0.90335089]]  intercept  [3.79690226]
+[ACTION] Adding new datapoints
+[INFO] Number of new datapoints:  156
+[INFO] Number of new datapoints after filtering:  156
+[INFO] Number of new datapoints after reduction:  52
+[ACTION] Done adding new datapoints
+[TIMING] 	 Time:  0.076 s
+53  Time for iteration:  0.25
+Time for plotting:  4.09
+-----------------------------------------------------
+#################   Iteration 54    #################
+-----------------------------------------------------
+[ACTION] Predicting directions
+[INFO] The number of directions is:  7
+[ACTION] Done predicting directions
+[TIMING] 	 The time used was:  0.149 s
+[INFO] max gradient:  0.024
+[INFO] coeff  [[0.90444093]]  intercept  [3.7766512]
+[ACTION] Adding new datapoints
+[INFO] Number of new datapoints:  156
+[INFO] Number of new datapoints after filtering:  156
+[INFO] Number of new datapoints after reduction:  52
+[ACTION] Done adding new datapoints
+[TIMING] 	 Time:  0.118 s
+54  Time for iteration:  0.28
+Time for plotting:  6.01
+S (872, 2)
+T (872,)
+salinity (872,)
+Sigma (872, 872)
+mu (872,)
+mu_uncorrected (872,)
+m (872,)
+Psi (872, 872)
+G (871,)
+Var_G (871,)
+inv_matrix (872, 872)
+has_points 
+used_points (2870,)
+path_list 
+has_points 
+S (2870, 2)
+T (2870,)
+salinity (2870,)
+mu (2870,)
+mu_uncorrected (2870,)
+m (2870,)
+G (2869,)
+Var_G (2869,)
+dPsi (2870,)
+dSigma (2870,)
+-----------------------------------------------------
+#################   Iteration 55    #################
+-----------------------------------------------------
+[ACTION] Predicting directions
+[INFO] The number of directions is:  7
+[ACTION] Done predicting directions
+[TIMING] 	 The time used was:  0.181 s
+[INFO] max gradient:  0.024
+[INFO] coeff  [[0.90519648]]  intercept  [3.7616743]
+[ACTION] Adding new datapoints
+[INFO] Number of new datapoints:  156
+[INFO] Number of new datapoints after filtering:  155
+[INFO] Number of new datapoints after reduction:  51
+[ACTION] Done adding new datapoints
+[TIMING] 	 Time:  0.149 s
+55  Time for iteration:  0.34
+Time for plotting:  4.29
+-----------------------------------------------------
+#################   Iteration 56    #################
+-----------------------------------------------------
+[ACTION] Predicting directions
+[INFO] The number of directions is:  7
+[ACTION] Done predicting directions
+[TIMING] 	 The time used was:  0.145 s
+[INFO] max gradient:  0.024
+[INFO] coeff  [[0.90640241]]  intercept  [3.73690897]
+[ACTION] Adding new datapoints
+[INFO] Number of new datapoints:  156
+[INFO] Number of new datapoints after filtering:  156
+[INFO] Number of new datapoints after reduction:  52
+[ACTION] Done adding new datapoints
+[TIMING] 	 Time:  0.131 s
+56  Time for iteration:  0.28
+Time for plotting:  4.05
+S (975, 2)
+T (975,)
+salinity (975,)
+Sigma (975, 975)
+mu (975,)
+mu_uncorrected (975,)
+m (975,)
+Psi (975, 975)
+G (974,)
+Var_G (974,)
+inv_matrix (975, 975)
+has_points 
+used_points (2973,)
+path_list 
+has_points 
+S (2973, 2)
+T (2973,)
+salinity (2973,)
+mu (2973,)
+mu_uncorrected (2973,)
+m (2973,)
+G (2972,)
+Var_G (2972,)
+dPsi (2973,)
+dSigma (2973,)
+-----------------------------------------------------
+#################   Iteration 57    #################
+-----------------------------------------------------
+[ACTION] Predicting directions
+[INFO] The number of directions is:  8
+[ACTION] Done predicting directions
+[TIMING] 	 The time used was:  0.189 s
+[INFO] max gradient:  0.024
+[INFO] coeff  [[0.90757971]]  intercept  [3.71572923]
+[ACTION] Adding new datapoints
+[INFO] Number of new datapoints:  156
+[INFO] Number of new datapoints after filtering:  156
+[INFO] Number of new datapoints after reduction:  52
+[ACTION] Done adding new datapoints
+[TIMING] 	 Time:  0.154 s
+57  Time for iteration:  0.38
+Time for plotting:  4.16
+-----------------------------------------------------
+#################   Iteration 58    #################
+-----------------------------------------------------
+[ACTION] Predicting directions
+[INFO] The number of directions is:  6
+[ACTION] Done predicting directions
+[TIMING] 	 The time used was:  0.173 s
+[INFO] max gradient:  0.024
+[INFO] coeff  [[0.90734775]]  intercept  [3.73046182]
+[ACTION] Adding new datapoints
+[INFO] Number of new datapoints:  156
+[INFO] Number of new datapoints after filtering:  156
+[INFO] Number of new datapoints after reduction:  52
+[ACTION] Done adding new datapoints
+[TIMING] 	 Time:  0.228 s
+58  Time for iteration:  0.41
+Time for plotting:  4.12
+S (1079, 2)
+T (1079,)
+salinity (1079,)
+Sigma (1079, 1079)
+mu (1079,)
+mu_uncorrected (1079,)
+m (1079,)
+Psi (1079, 1079)
+G (1078,)
+Var_G (1078,)
+inv_matrix (1079, 1079)
+has_points 
+used_points (3077,)
+path_list 
+has_points 
+S (3077, 2)
+T (3077,)
+salinity (3077,)
+mu (3077,)
+mu_uncorrected (3077,)
+m (3077,)
+G (3076,)
+Var_G (3076,)
+dPsi (3077,)
+dSigma (3077,)
+-----------------------------------------------------
+#################   Iteration 59    #################
+-----------------------------------------------------
+[ACTION] Predicting directions
+[INFO] The number of directions is:  6
+[ACTION] Done predicting directions
+[TIMING] 	 The time used was:  0.121 s
+[INFO] max gradient:  0.024
+[INFO] coeff  [[0.90674545]]  intercept  [3.74915325]
+[ACTION] Adding new datapoints
+[INFO] Number of new datapoints:  156
+[INFO] Number of new datapoints after filtering:  156
+[INFO] Number of new datapoints after reduction:  52
+[ACTION] Done adding new datapoints
+[TIMING] 	 Time:  0.191 s
+59  Time for iteration:  0.33
+Time for plotting:  4.3

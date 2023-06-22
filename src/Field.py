@@ -19,7 +19,7 @@ class Field:
 
     def __init__(self) -> None:
         # s1, load csv files for all the polygons
-        self.__wgs_polygon_border = pd.read_csv(os.getcwd() + "/src/csv/polygon_border.csv").to_numpy()
+        self.__wgs_polygon_border = pd.read_csv(os.getcwd() + "/src/csv/polygon_border_small.csv").to_numpy()
         self.__wgs_polygon_obstacle = pd.read_csv(os.getcwd() + "/src/csv/polygon_obstacle.csv").to_numpy()
 
         # s2, convert wgs to xy
