@@ -9,6 +9,7 @@ from WGS import WGS
 border = pd.read_csv(os.getcwd() + "/src/csv/polygon_border.csv").to_numpy()
 border_small = pd.read_csv(os.getcwd() + "/src/csv/polygon_border_small.csv").to_numpy()
 obstacles = pd.read_csv(os.getcwd() + "/src/csv/polygon_obstacle.csv").to_numpy()
+safety_zone = pd.read_csv(os.getcwd() + "/src/csv/polygon_safety.csv").to_numpy()
 
 print(border.shape)
 
@@ -16,6 +17,7 @@ print(border.shape)
 plt.plot(obstacles[:,1], obstacles[:,0])
 plt.plot(border[:,1], border[:,0])
 plt.plot(border_small[:,1], border_small[:,0])
+plt.plot(safety_zone[:,1], safety_zone[:,0])
 plt.scatter(border_small[:,1], border_small[:,0], c=np.linspace(0,border_small.shape[0],border_small.shape[0]) , cmap='turbo')
 plt.colorbar()
 plt.show()

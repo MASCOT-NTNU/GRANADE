@@ -32,6 +32,7 @@ class AUVData:
                     phi_d: float = 250,
                     phi_t: float = 3600,
                     sigma: float = 2,
+                    depth_layer: float = 0.5,
                     sampling_speed: float = 1,
                     auv_speed: float = 1.6,
                     timing: bool = True,
@@ -46,6 +47,7 @@ class AUVData:
         self.phi_t = phi_t
         self.sigma = sigma
         self.max_points = 2000
+        self.depth_layer = depth_layer # m
 
         # AUV parameters
         self.auv_speed = auv_speed # m/s
@@ -300,7 +302,7 @@ class AUVData:
         return inverted_matrix
 
 
-    def add_first_points(self, S, T, salinity):
+    def add_first_points(self, S, T, salinity, depth):
         # Update the timing 
         self.expertiment_data_t0 = T[0]
 
@@ -321,6 +323,7 @@ class AUVData:
         self.auv_data["S"] = S
         self.auv_data["T"] = T
         self.auv_data["salinity"] = salinity
+        self.auv_data["depth"] = depth
         self.auv_data["used_points"] = np.repeat(True, len(salinity))
 
 
@@ -353,11 +356,11 @@ class AUVData:
         
 
 
-    def reduce_points_function(self, S, T, salinity):
+    def reduce_points_function(self, S, T, salinity, depth):
         n = len(salinity)
         if n < 2 * self.reduce_points_factor:
             print("[INFO] not enough points to reduce")
-            return S, T, salinity
+            return S, T, salinity, depth
         
 
         # These are the points that we want to keep
@@ -370,6 +373,7 @@ class AUVData:
         # Reducing the number of points
         S = S[indices]
         T = T[indices]
+        depth = depth[indices]
         #salinity = salinity[indices]
         salinity_new = np.zeros(len(indices))
         j = 0
@@ -379,7 +383,7 @@ class AUVData:
             else:
                 salinity_new[j] = np.mean(salinity[i:i+self.reduce_points_factor])
             j += 1
-        return S, T, salinity_new
+        return S, T, salinity_new, depth
 
 
     def filter_new_points(self, S_new, T_new, salinity_new, depth_new=None):
@@ -397,26 +401,36 @@ class AUVData:
         # Getting the indices of the points that we want to keep
         indices = 0
         if depth_new is not None:
-            indices = np.where((dist > 0.1) * (depth_new < 0.8) * (depth_new > 0.20))[0]
+            indices = np.where((dist > 0.1) * (depth_new < self.depth_layer + 0.15) * (depth_new > self.depth_layer-0.15))[0]
         else:
             indices = np.where((dist > 0.1) * (salinity_new > 5))[0]
-
+        if depth_new is not None:
+            if indices.shape[0] > 2:
+                return S_new[indices], T_new[indices], salinity_new[indices], depth_new[indices]
+            else:
+                print("[WARNING] to few points to filter")
+                return S_new, T_new, salinity_new, depth_new
         return S_new[indices], T_new[indices], salinity_new[indices]
         
         
 
 
 
-    def add_new_datapoints(self, S_new,T_new, salinity_new, depth_new=None):
+    def add_new_datapoints(self, S_new,T_new, salinity_new, depth_new):
         if self.print_while_running:
             print("[ACTION] Adding new datapoints")
             print("[INFO] Number of new datapoints: ", len(salinity_new))
 
+        # Updating the raw data, this is without filtering
+        self.update_raw_data(S_new, T_new, salinity_new, depth_new)
+
         start = time.time()
         n_new = len(salinity_new)
 
+
+
         # Filter the new datapoints
-        S_new, T_new, salinity_new = self.filter_new_points(S_new, T_new, salinity_new, depth_new)
+        S_new, T_new, salinity_new, depth_new = self.filter_new_points(S_new, T_new, salinity_new, depth_new)
         if self.print_while_running:
            print("[INFO] Number of new datapoints after filtering: ", len(salinity_new)) 
 
@@ -424,13 +438,13 @@ class AUVData:
         # If we want to reduce the number of points that we add
         # this is done to save time 
         if self.reduce_points:
-            S_new, T_new, salinity_new = self.reduce_points_function(S_new, T_new, salinity_new)
+            S_new, T_new, salinity_new, depth_new = self.reduce_points_function(S_new, T_new, salinity_new, depth_new)
             
             if self.print_while_running:
                 print("[INFO] Number of new datapoints after reduction: ", len(salinity_new))
 
         if self.auv_data["has_points"] == False:
-            self.add_first_points(S_new, T_new, salinity_new)
+            self.add_first_points(S_new, T_new, salinity_new, depth_new)
         
         else:
             
@@ -473,6 +487,7 @@ class AUVData:
             salinity = np.concatenate((salinity, salinity_new))
             self.auv_data["S"] = np.concatenate((S,S_new))
             self.auv_data["salinity"] = salinity
+            self.auv_data["depth"] = np.concatenate((self.auv_data["depth"], depth_new))
             self.auv_data["T"] = np.concatenate((self.auv_data["T"],T_new))
             self.auv_data["used_points"] = np.concatenate((self.auv_data["used_points"],used_points_new))
 
@@ -538,6 +553,7 @@ class AUVData:
             self.all_auv_data["S"] = self.auv_data["S"]
             self.all_auv_data["T"] = self.auv_data["T"]
             self.all_auv_data["salinity"] = self.auv_data["salinity"]
+            self.all_auv_data["depth"] = self.auv_data["depth"]
             self.all_auv_data["mu"] = self.auv_data["mu"]
             self.all_auv_data["mu_uncorrected"] = self.auv_data["mu_uncorrected"]
             self.all_auv_data["m"] = self.auv_data["m"] 
@@ -558,6 +574,7 @@ class AUVData:
             self.all_auv_data["S"] = np.concatenate((self.all_auv_data["S"], self.auv_data["S"][-n_new:]))
             self.all_auv_data["T"] = np.concatenate((self.all_auv_data["T"], self.auv_data["T"][-n_new:]))
             self.all_auv_data["salinity"] = np.concatenate((self.all_auv_data["salinity"], self.auv_data["salinity"][-n_new:]))
+            self.all_auv_data["depth"] = np.concatenate((self.all_auv_data["depth"], self.auv_data["depth"][-n_new:]))
             self.all_auv_data["mu"] = np.concatenate((self.all_auv_data["mu"], self.auv_data["mu"][-n_new:]))
             self.all_auv_data["mu_uncorrected"] = np.concatenate((self.all_auv_data["mu_uncorrected"], self.auv_data["mu_uncorrected"][-n_new:]))
             self.all_auv_data["m"] = np.concatenate((self.all_auv_data["m"], self.auv_data["m"][-n_new:]))
@@ -567,6 +584,21 @@ class AUVData:
             # Diagonal of the matrices
             self.all_auv_data["dPsi"] = np.concatenate((self.all_auv_data["dPsi"], np.diag(self.auv_data["Psi"])[-n_new:]))
             self.all_auv_data["dSigma"] = np.concatenate((self.all_auv_data["dSigma"], np.diag(self.auv_data["Sigma"])[-n_new:]))
+
+    def update_raw_data(self, S, T, salinity, depth):
+        if self.print_while_running:
+            print("[ACTION] Updating raw data")
+        if self.raw_auv_data["has_points"] == False:
+            self.raw_auv_data["S"] = S
+            self.raw_auv_data["T"] = T
+            self.raw_auv_data["salinity"] = salinity
+            self.raw_auv_data["depth"] = depth
+            self.raw_auv_data["has_points"] = True
+        else:
+            self.raw_auv_data["S"] = np.concatenate((self.raw_auv_data["S"], S))
+            self.raw_auv_data["T"] = np.concatenate((self.raw_auv_data["T"], T))
+            self.raw_auv_data["salinity"] = np.concatenate((self.raw_auv_data["salinity"], salinity))
+            self.raw_auv_data["depth"] = np.concatenate((self.raw_auv_data["depth"], depth))
 
 
     def down_sample_points(self):
@@ -585,6 +617,7 @@ class AUVData:
         new_data["S"] = old_data["S"][ind]
         new_data["T"] = old_data["T"][ind]
         new_data["salinity"] = old_data["salinity"][ind]
+        new_data["depth"] = old_data["depth"][ind]
         new_data["Sigma"] = old_data["Sigma"][ind][:,ind]
         new_data["mu"] = old_data["mu"][ind]
         new_data["mu_uncorrected"] = old_data["mu_uncorrected"][ind]
@@ -639,6 +672,10 @@ class AUVData:
         with open(self.save_data_path + "all_auv_data_" + str(self.__counter), 'wb') as f:
             pickle.dump(self.all_auv_data, f)
 
+        # Store the raw data
+        with open(self.save_data_path + "raw_auv_data_" + str(self.__counter), 'wb') as f:
+            pickle.dump(self.raw_auv_data, f)
+
 
 
     def load_data(self, counter: int):
@@ -691,7 +728,7 @@ class AUVData:
 
 
 
-    def predict_points(self, P_predict: np.ndarray, T_predict):
+    def predict_points(self, P_predict: np.ndarray, T_predict: np.ndarray, prior_time_correction: float=0.0):
 
         if self.auv_data["has_points"] == False:
 
@@ -793,7 +830,7 @@ class AUVData:
 
         # Returning the gradient
         if np.min(Var_G) < 0:
-            print("[WARNING] Var_G has negative values")
+            print("[WARNING] [AUV_data] Var_G has negative values")
             #plt.plot(Var_G)
             #plt.show()
 

@@ -64,17 +64,20 @@ add_random_field_exp = True
 descicion_rule = "top_p_improvement"
 dashboard_type = "full"
 restart_AUV = True
-max_iter_speed = 0.5
+max_iter_speed = 0.2
 experiment_id = "new"
 reduce_points_factor = 3
+phi_d = 540
+phi_t = 7200
+depth_layer = 1
 
 
 
 
 # Correction
 add_correction = True
-beta_0 = 5
-beta_1 = 0.9
+beta_0 = 18
+beta_1 = 0.2
 
 
 # Getting the experiment id
@@ -126,7 +129,10 @@ AUV_data = AUVData(sinmod_field_prior,
                    auv_speed=AUV_SPEED,
                     temporal_corrolation=True,
                     experiment_id=experiment_id,
-                    reduce_points_factor=reduce_points_factor,)
+                    reduce_points_factor=reduce_points_factor,
+                    phi_d=phi_d,
+                    phi_t=phi_t,
+                    depth_layer=depth_layer)
 AUV_data.load_most_recent_data()
 des_rule = DescicionRule(descicion_rule)
 
@@ -216,7 +222,7 @@ descicions = []
 # Finding a random direction to go in
 start_x = np.random.uniform(-2500, 2000)
 start_y = np.random.uniform(1000, 5000)
-start = np.array([start_x, start_y])
+start = np.array([start_x, start_y])        
 while operation_field.is_loc_legal(np.flip(start)) == False:
     start_x = np.random.uniform(-2500, 2000)
     start_y = np.random.uniform(1000, 5000)
@@ -235,9 +241,13 @@ while operation_field.is_path_legal(np.flip(a),np.flip(b)) == False:
 # Get data from this field 
 S, T, salinity = get_data_transact(a, b, experiment_start_t, sinmod_field, time_shift=time_lag ,add_random_field=add_random_field_exp) 
 
+if add_correction:
+    salinity = salinity * beta_1 + beta_0
 ## First go in a random direct
 # Need to change the time to make it correct
-AUV_data.add_new_datapoints(S, T - diff_time,salinity)
+depth = np.random.normal(depth_layer, 0.2, len(T))
+print("depth", depth)
+AUV_data.add_new_datapoints(S, T - diff_time,salinity, depth)
 
 
 # Iteration speed
@@ -574,7 +584,8 @@ for i in range(n_iterations):
         salinity = salinity * beta_1 + beta_0
 
     ## First go in a random direct
-    AUV_data.add_new_datapoints(S,T - diff_time,salinity)
+    depth = np.random.normal(depth_layer, 0.2, len(T))
+    AUV_data.add_new_datapoints(S,T - diff_time,salinity, depth)
 
     iter_speed.append(time.time() - t_1 - plotting_time)
     print(i," Time for iteration: ", round(iter_speed[-1], 2))
@@ -598,7 +609,7 @@ for i in range(n_iterations):
     
     # Randomly restart the AUV
     if restart_AUV:
-        if np.random.uniform() < 0.1:
+        if np.random.uniform() < 0.001:
             AUV_data.print_timing()
 
             print("Restarting AUV")
@@ -611,7 +622,10 @@ for i in range(n_iterations):
                    auv_speed=AUV_SPEED,
                     temporal_corrolation=True,
                     experiment_id=experiment_id,
-                    reduce_points_factor=reduce_points_factor)
+                    reduce_points_factor=reduce_points_factor,
+                    phi_d=phi_d,
+                    phi_t=phi_t,
+                    depth_layer=depth_layer)
             print("Data in memory after rest: ", AUV_data.get_number_of_points_in_memory())
             AUV_data.load_most_recent_data()
             print("Data in memory after reloading data: ", AUV_data.get_number_of_points_in_memory())

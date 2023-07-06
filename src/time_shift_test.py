@@ -25,9 +25,9 @@ high_tide_2_2022_06_22 = datetime.datetime(2022,6,22,19,40)
 
 
 prior_date = datetime.datetime(2022,6,21)
-today_date = datetime.datetime(2023,6,20)
+today_date = datetime.datetime(2023,6,22)
 high_tide_prior = high_tide_1_2022_06_21
-high_tide_today = high_tide_1_2023_06_20
+high_tide_today = high_tide_1_2023_06_22
 
 # 
 print("This is the prior date: ", prior_date)

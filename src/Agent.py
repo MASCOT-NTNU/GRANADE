@@ -36,17 +36,19 @@ class Agent:
         self.radius_init = 150 # meters, how far the agent will move on the first iteration
         self.descicion_rule_str = "top_p_improvement"
         self.prior_path = os.getcwd() + "/src/sinmod_files/" + sinmod_file_name + ".nc"
-        self.start_from_current_location = True
+        self.start_from_current_location = False
 
         # Tide data 
         self.prior_date = datetime.datetime(2022,6,21)            # SET EVERY MISSION
-        self.date_today = datetime.datetime(2023,6,22)            # SET EVERY MISSION
+        self.date_today = datetime.datetime(2023,6,23)            # SET EVERY MISSION
         self.high_tide_prior = datetime.datetime(2022,6,21,5,30)  # SET EVERY MISSION
-        self.high_tide_today = datetime.datetime(2023,6,22,2,50)  # SET EVERY MISSION
+        self.high_tide_today = datetime.datetime(2023,6,23,3,20)  # SET EVERY MISSION
         self.time_correction = 0
         self.salmpling_frequency = 1
         self.max_planning_time = 5 # seconds
-        self.num_steps = 20 # The number of steps the agent will take
+        self.num_steps = 40 # The number of steps the agent will take
+
+        print("[INFO] estimated time to complete mission: ", self.num_steps * self.radius / 1.6 / 3600 * 1.3, " hrs")
 
         # Parameters for the spatial model
         self.tau = 0.27 # The measurment noise
@@ -54,7 +56,7 @@ class Agent:
         self.phi_t = 5400 # The temporal correlation length
         self.sigma = 2
         self.auv_speed = 1.6  # [m/s] The auv speed
-        self.auv_depth = 0.5 # The depth layer the auv will be operating in
+        self.auv_depth = 1 # The depth layer the auv will be operating in
         self.reduce_points_factor = 2 # The factor to reduce the number of points added at each iteration
                                       # if factor is 1, no points will be removed
                                       # if factor is 2, half of the points will be removed
@@ -109,7 +111,8 @@ class Agent:
                                 tau=self.tau,
                                 experiment_id=experiment_id,
                                 time_diff_prior=self.diff_time_s,
-                                reduce_points_factor=self.reduce_points_factor)
+                                reduce_points_factor=self.reduce_points_factor,
+                                depth_layer=self.auv_depth)
         self.auv_data.load_most_recent_data() # This will load the most recent data if it exists
         self.descicion_rule = DescicionRule(self.descicion_rule_str)
 
@@ -140,7 +143,7 @@ class Agent:
 
         
         # c1: start the operation from scratch.
-        wp_depth = .5
+        wp_depth = 1
         wp_start = self.wp_start
 
         speed = self.auv.get_speed()
@@ -227,7 +230,7 @@ class Agent:
 
                     # update the points in memory
                     if len(time_data) > 0:
-                        self.auv_data.add_new_datapoints(np.array(position_data), np.array(time_data), np.array(salinity_data))
+                        self.auv_data.add_new_datapoints(np.array(position_data), np.array(time_data), np.array(salinity_data), np.abs(np.array(depth_data)))
                     else:
                         print("[WARNING] no new data points to add")
                     
@@ -274,6 +277,18 @@ class Agent:
 
                 if self.__counter == self.num_steps:
                     print("Mission complete!")
+                    self.auv.auv_handler.PopUp(sms=True, iridium=True, popup_duration=popup_time,
+                                                   phone_number=phone, iridium_dest=iridium)
+                    self.auv.auv_handler.PopUp(sms=True, iridium=True, popup_duration=popup_time,
+                                                   phone_number=phone, iridium_dest=iridium)
+                    self.auv.auv_handler.PopUp(sms=True, iridium=True, popup_duration=popup_time,
+                                                   phone_number=phone, iridium_dest=iridium)
+                    self.auv.auv_handler.PopUp(sms=True, iridium=True, popup_duration=popup_time,
+                                                   phone_number=phone, iridium_dest=iridium)
+                    self.auv.auv_handler.PopUp(sms=True, iridium=True, popup_duration=popup_time,
+                                                   phone_number=phone, iridium_dest=iridium)
+                    self.auv.auv_handler.PopUp(sms=True, iridium=True, popup_duration=popup_time,
+                                                   phone_number=phone, iridium_dest=iridium)
                     rospy.signal_shutdown("done")
                     
                     break
@@ -286,6 +301,11 @@ class Agent:
 
         # a is the current waypoint in x, y
         # b is the next waypoint in x, y
+
+        if self.auv_data.get_number_of_points_in_memory() < 2:
+            print("[WARNING] not enough points in memory")
+            print("[INFO] will move randomly")
+            return self.plan_first_waypoint()
 
 
         time_start = time.time()
@@ -384,10 +404,13 @@ class Agent:
         r = self.radius_init
         while self.operation_field.is_path_legal(np.flip(a),np.flip(b)) == False: 
             theta =  np.random.rand(1) * np.pi * 2 
-            b = np.array([a[0] + self.r * np.cos(theta), a[1] + self.r * np.sin(theta)]).ravel()
+            b = np.array([a[0] + self.radius * np.cos(theta), a[1] + self.radius * np.sin(theta)]).ravel()
             counter += 1
             if counter > 20:
                 r = np.random.rand(1) * 300
+            if counter > 200:
+                print("[ERROR] could not find a legal path")
+                break
         print("b", b)
         return b
     
@@ -435,7 +458,7 @@ class Agent:
     
 if __name__ == "__main__":
 
-    experiment_id = "new"
+    experiment_id = "pre_mission_test"
     Agent = Agent(experiment_id=experiment_id)
     Agent.run()
 

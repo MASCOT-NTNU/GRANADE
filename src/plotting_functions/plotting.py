@@ -16,7 +16,9 @@ class PlotttingFunctions:
                  gradient_lim_low = 0,
                  gradient_lim_high = 0.03, 
                  error_lim_low = -3, 
-                 error_lim_high = 3) -> None:
+                 error_lim_high = 3,
+                 prior_time_correction=0,
+                 num_kriege_points=4000) -> None:
         
         # Functions 
         self.auv_data = AUVData
@@ -24,6 +26,12 @@ class PlotttingFunctions:
         self.field_sinmod = field_SINMOD 
         self.descicion = descicion
         self.direction_data = direction_data
+
+        # Prior time correction
+        self.prior_time_correction = prior_time_correction
+
+        # The number of points to use in the kriege field
+        self.num_kriege_points = num_kriege_points
 
         # Plotting limits
         self.slinity_lim_low = slinity_lim_low
@@ -40,6 +48,11 @@ class PlotttingFunctions:
         self.x_lim_high = 2400
         self.y_lim_low = 0
         self.y_lim_high = 5500  
+
+        self.x_lim_low_small = -1500
+        self.x_lim_high_small = 2000
+        self.y_lim_low_small = 1500
+        self.y_lim_high_small = 5500 
 
 
         # Color maps
@@ -67,6 +80,12 @@ class PlotttingFunctions:
         else:
             axis.plot(path_list[:,0],path_list[:,1], color="black", label="AUV path")
 
+    def plot_estimated_gradient_path(self, axis):
+        S = self.auv_data.all_auv_data["S"]
+        G = self.auv_data.all_auv_data["G"]
+        axis.scatter(S[:,0][0:-1],S[:,1][0:-1], c=G, cmap=self.cmap_gradient,label="Estimated gradient", vmin=self.gradient_lim_low, vmax=self.gradient_lim_high)
+
+
     def add_noth_arrow(self, axis ,a=[-2500, 3500]):
         # Add a north arrow
         x, y, arrow_length = 0.1, 0.9, 0.1
@@ -74,6 +93,8 @@ class PlotttingFunctions:
                     arrowprops=dict(facecolor='black', width=5, headwidth=15),
                     ha='center', va='center', fontsize=20,
                     xycoords=axis.transAxes)
+        
+    
 
     def add_one_kilometer(self, axis, a=[1000, 5000]):
         # Add a kilometer line
@@ -84,6 +105,10 @@ class PlotttingFunctions:
     def axs_add_limits(self,axis):
         axis.set_xlim(self.x_lim_low,self.x_lim_high)
         axis.set_ylim(self.y_lim_low,self.y_lim_high)
+
+    def axs_add_limits_small(self,axis):
+        axis.set_xlim(self.x_lim_low_small,self.x_lim_high_small)
+        axis.set_ylim(self.y_lim_low_small,self.y_lim_high_small)
 
     def plot_descicion_paths(self, axis, direction_data):
         end_points = direction_data["end_points"]
@@ -104,6 +129,8 @@ class PlotttingFunctions:
         salinity = self.auv_data.get_salinity_in_memory()
         axis.scatter(S[:,0],S[:,1], c=salinity,vmin=self.slinity_lim_low, vmax=self.salinity_lim_high, cmap=self.cmap_salinity, label="AUV path")
 
+
+
     def plot_gradient_sinmod(self, axis, t):
         # plot the gradient of the SINMOD field
         points, G_vec = self.field_sinmod.get_gradient_field(t,0)
@@ -114,12 +141,13 @@ class PlotttingFunctions:
     def kriege_field(self):
         # sample n values from a numpy array
         predict_points = self.field_sinmod.get_points_ocean()
-        inds = np.random.choice(np.arange(len(predict_points)), size=4000, replace=False)
+        inds = np.random.choice(np.arange(len(predict_points)), size=self.num_kriege_points, replace=False)
         predict_points = predict_points[inds]
 
-        T = np.repeat(self.auv_data.auv_data["T"][-1], len(predict_points))
+        # We need the t_correction to make to make the prior match the measeured values
+        T = np.repeat(self.auv_data.auv_data["T"][-1], len(predict_points)) 
         mu_pred, sigma_pred , _, _ = self.auv_data.predict_points(predict_points, T)
-
+ 
         # create an interpolator function
         self.salinity_kriege_func = interpolate.CloughTocher2DInterpolator(predict_points, mu_pred)
 
@@ -370,14 +398,14 @@ class PlotttingFunctions:
                          vmax=self.score_high, label="Descicion path")
             
 
-    def plot_direction_gradient_color(self, axis, direction_data):
+    def plot_direction_gradient_color(self, axis):
 
-        n = direction_data["n_directions"]
-        end_points = direction_data["end_points"]
+        n = self.direction_data["n_directions"]
+        end_points = self.direction_data["end_points"]
         start_point = self.auv_data.get_auv_path_list()[-1]
         for j in range(n):
-            G = direction_data["gradient_directions"][j]
-            S = direction_data["points_directions"][j]
+            G = self.direction_data["gradient_directions"][j]
+            S = self.direction_data["points_directions"][j]
             points = np.linspace(start_point,end_points[j], len(G))
             axis.scatter(points[:,0],points[:,1], c=np.abs(G), cmap = self.cmap_gradient, vmin=self.gradient_lim_low, vmax=self.gradient_lim_high)    
 
